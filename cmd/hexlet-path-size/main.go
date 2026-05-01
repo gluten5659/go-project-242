@@ -12,8 +12,8 @@ import (
 func main() {
 	cmd := &cli.Command{
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			fmt.Printf("Hello %q", cmd.Args().Get(0))
-			GetSize(path string)
+			path := cmd.Args().Get(0)
+			fmt.Printf("%dB	%s", GetSize(path), path)
 
 			return nil
 		},
@@ -23,12 +23,12 @@ func main() {
 	}
 }
 
-func GetSize(path string) (int, error) {
+func GetSize(path string) int {
 	size, err := getFileSize(path)
 	if err != nil {
-		size, err = getFolderSize(path)
+		size, _ = getFolderSize(path)
 	}
-	return size, err
+	return size
 }
 
 func getFileSize(filePath string) (int, error) {
