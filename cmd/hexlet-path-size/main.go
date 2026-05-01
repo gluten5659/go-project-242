@@ -10,10 +10,19 @@ import (
 )
 
 func main() {
+	var formatNeeded bool
 	cmd := &cli.Command{
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:        "human",
+				Usage:       "Converts B into more readable KB/MB/GB etc.",
+				Aliases:     []string{"H"},
+				Destination: &formatNeeded,
+			},
+		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			path := cmd.Args().Get(0)
-			fmt.Printf("%dB	%s\n", GetSize(path), path)
+			fmt.Println(FormatedSize(path, formatNeeded))
 
 			return nil
 		},
@@ -21,6 +30,30 @@ func main() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+var Sizes = []string{
+	"B",
+	"KB",
+	"MB",
+	"GB",
+	"TB",
+	"PB",
+	"EB",
+	"PLZ NO MORE",
+}
+
+func FormatedSize(path string, formatNeeded bool) string {
+	size := float64(GetSize(path))
+	prefix := 0
+	if !formatNeeded {
+		return fmt.Sprintf("%.0fB	%s", size, path)
+	}
+	for size > 1023.9 {
+		prefix++
+		size = size / 1024
+	}
+	return fmt.Sprintf("%.1f%s	%s", size, Sizes[prefix], path)
 }
 
 func GetSize(path string) int {
