@@ -13,7 +13,7 @@ func main() {
 	cmd := &cli.Command{
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			path := cmd.Args().Get(0)
-			fmt.Printf("%dB	%s", GetSize(path), path)
+			fmt.Printf("%dB	%s\n", GetSize(path), path)
 
 			return nil
 		},
@@ -46,14 +46,7 @@ func getFolderSize(folderPath string) (int, error) {
 	}
 	folderSize := 0
 	for _, file := range files {
-		if file.Type().IsDir() {
-			continue
-		}
-		fileInfo, err := file.Info()
-		if err != nil {
-			return 0, err
-		}
-		folderSize += int(fileInfo.Size())
+		folderSize += GetSize(file.Name())
 	}
 	return folderSize, nil
 }
