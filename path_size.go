@@ -24,7 +24,7 @@ var Sizes = []string{
 }
 
 func FormatedSize(path string) string {
-	size := float64(GetSize(path))
+	size := float64(GetPathSize(path))
 	prefix := 0
 	if !FormatNeeded {
 		return fmt.Sprintf("%.0fB	%s", size, path)
@@ -36,7 +36,7 @@ func FormatedSize(path string) string {
 	return fmt.Sprintf("%.1f%s	%s", size, Sizes[prefix], path)
 }
 
-func GetSize(path string) int {
+func GetPathSize(path string) int {
 	stat, _ := os.Lstat(path)
 	size := 0
 	if stat.IsDir() {
@@ -57,7 +57,7 @@ func getFolderSize(folderPath string) int {
 		if !Recursive && file.IsDir() {
 			continue
 		}
-		folderSize += GetSize(filepath.Join(folderPath, file.Name()))
+		folderSize += GetPathSize(filepath.Join(folderPath, file.Name()))
 	}
 	return folderSize
 }
