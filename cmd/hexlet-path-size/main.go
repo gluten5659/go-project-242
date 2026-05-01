@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	listHidden bool
-	recursive  bool
+	listHidden    bool
+	recursive     bool
+	formatNeeded  bool
 )
 
 func main() {
-	var formatNeeded bool
 	cmd := &cli.Command{
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -91,12 +91,10 @@ func getFolderSize(folderPath string) int {
 		if !listHidden && file.Name()[0] == '.' {
 			continue
 		}
-		path := folderPath + `/` + file.Name()
-		stat, _ := os.Lstat(path)
-		if !recursive && stat.IsDir() {
+		if !recursive && file.IsDir() {
 			continue
 		}
-		folderSize += GetSize(path)
+		folderSize += GetSize(folderPath + `/` + file.Name())
 	}
 	return folderSize
 }
