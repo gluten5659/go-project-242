@@ -5,15 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+
+	code "code"
 
 	"github.com/urfave/cli/v3"
-)
-
-var (
-	listHidden   bool
-	recursive    bool
-	formatNeeded bool
 )
 
 func main() {
@@ -23,24 +18,24 @@ func main() {
 				Name:        "human",
 				Usage:       "Converts B into more readable KB/MB/GB etc.",
 				Aliases:     []string{"H"},
-				Destination: &formatNeeded,
+				Destination: &code.FormatNeeded,
 			},
 			&cli.BoolFlag{
 				Name:        "all",
 				Usage:       "Allow hidden files",
 				Aliases:     []string{"a"},
-				Destination: &listHidden,
+				Destination: &code.ListHidden,
 			},
 			&cli.BoolFlag{
 				Name:        "recursive",
 				Usage:       "Recursive sizes",
 				Aliases:     []string{"r"},
-				Destination: &recursive,
+				Destination: &code.Recursive,
 			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			path := cmd.Args().Get(0)
-			fmt.Println(FormatedSize(path))
+			fmt.Println(code.FormatedSize(path))
 
 			return nil
 		},
@@ -48,54 +43,4 @@ func main() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-var Sizes = []string{
-	"B",
-	"KB",
-	"MB",
-	"GB",
-	"TB",
-	"PB",
-	"EB",
-	"PLZ NO MORE",
-}
-
-func FormatedSize(path string) string {
-	size := float64(GetSize(path))
-	prefix := 0
-	if !formatNeeded {
-		return fmt.Sprintf("%.0fB	%s", size, path)
-	}
-	for size > 1023.9 {
-		prefix++
-		size = size / 1024
-	}
-	return fmt.Sprintf("%.1f%s	%s", size, Sizes[prefix], path)
-}
-
-func GetSize(path string) int {
-	stat, _ := os.Lstat(path)
-	size := 0
-	if stat.IsDir() {
-		size += getFolderSize(path)
-	} else {
-		size = int(stat.Size())
-	}
-	return size
-}
-
-func getFolderSize(folderPath string) int {
-	files, _ := os.ReadDir(folderPath)
-	folderSize := 0
-	for _, file := range files {
-		if !listHidden && file.Name()[0] == '.' {
-			continue
-		}
-		if !recursive && file.IsDir() {
-			continue
-		}
-		folderSize += GetSize(filepath.Join(folderPath, file.Name()))
-	}
-	return folderSize
 }
