@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli/v3"
 )
@@ -94,7 +95,7 @@ func getFolderSize(folderPath string) int {
 		if !recursive && file.IsDir() {
 			continue
 		}
-		folderSize += GetSize(folderPath + `/` + file.Name())
+		folderSize += GetSize(filepath.Join(folderPath, file.Name()))
 	}
 	return folderSize
 }
