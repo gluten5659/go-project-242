@@ -26,13 +26,13 @@ func GetPathSize(path string, formatNeeded bool, listHidden bool, recursive bool
 	fsize := float64(size)
 	prefix := 0
 	if !formatNeeded {
-		return fmt.Sprintf("%.0fB\t%s", fsize, path), nil
+		return fmt.Sprintf("%.0fB", fsize), nil
 	}
 	for fsize > 1023.9 {
 		prefix++
 		fsize = fsize / 1024
 	}
-	return fmt.Sprintf("%.1f%s\t%s", fsize, Sizes[prefix], path), nil
+	return fmt.Sprintf("%.1f%s", fsize, Sizes[prefix]), nil
 }
 
 func getSize(path string, listHidden bool, recursive bool) (int, error) {
