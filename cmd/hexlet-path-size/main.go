@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	listHidden    bool
-	recursive     bool
-	formatNeeded  bool
+	listHidden   bool
+	recursive    bool
+	formatNeeded bool
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			path := cmd.Args().Get(0)
-			fmt.Println(FormatedSize(path, formatNeeded))
+			fmt.Println(FormatedSize(path))
 
 			return nil
 		},
@@ -61,7 +61,7 @@ var Sizes = []string{
 	"PLZ NO MORE",
 }
 
-func FormatedSize(path string, formatNeeded bool) string {
+func FormatedSize(path string) string {
 	size := float64(GetSize(path))
 	prefix := 0
 	if !formatNeeded {
