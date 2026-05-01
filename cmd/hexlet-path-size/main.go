@@ -12,31 +12,40 @@ import (
 )
 
 func main() {
+	var (
+		formatNeeded bool
+		listHidden   bool
+		recursive    bool
+	)
+
 	cmd := &cli.Command{
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:        "human",
 				Usage:       "Converts B into more readable KB/MB/GB etc.",
 				Aliases:     []string{"H"},
-				Destination: &code.FormatNeeded,
+				Destination: &formatNeeded,
 			},
 			&cli.BoolFlag{
 				Name:        "all",
 				Usage:       "Allow hidden files",
 				Aliases:     []string{"a"},
-				Destination: &code.ListHidden,
+				Destination: &listHidden,
 			},
 			&cli.BoolFlag{
 				Name:        "recursive",
 				Usage:       "Recursive sizes",
 				Aliases:     []string{"r"},
-				Destination: &code.Recursive,
+				Destination: &recursive,
 			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			path := cmd.Args().Get(0)
-			fmt.Println(code.FormatedSize(path))
-
+			result, err := code.GetPathSize(path, formatNeeded, listHidden, recursive)
+			if err != nil {
+				return err
+			}
+			fmt.Println(result)
 			return nil
 		},
 	}

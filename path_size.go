@@ -6,12 +6,6 @@ import (
 	"path/filepath"
 )
 
-var (
-	ListHidden   bool
-	Recursive    bool
-	FormatNeeded bool
-)
-
 var Sizes = []string{
 	"B",
 	"KB",
@@ -23,41 +17,53 @@ var Sizes = []string{
 	"PLZ NO MORE",
 }
 
-func FormatedSize(path string) string {
-	size := float64(GetPathSize(path))
+func GetPathSize(path string, formatNeeded bool, listHidden bool, recursive bool) (string, error) {
+	size, err := getSize(path, listHidden, recursive)
+	if err != nil {
+		return "", err
+	}
+
+	fsize := float64(size)
 	prefix := 0
-	if !FormatNeeded {
-		return fmt.Sprintf("%.0fB	%s", size, path)
+	if !formatNeeded {
+		return fmt.Sprintf("%.0fB\t%s", fsize, path), nil
 	}
-	for size > 1023.9 {
+	for fsize > 1023.9 {
 		prefix++
-		size = size / 1024
+		fsize = fsize / 1024
 	}
-	return fmt.Sprintf("%.1f%s	%s", size, Sizes[prefix], path)
+	return fmt.Sprintf("%.1f%s\t%s", fsize, Sizes[prefix], path), nil
 }
 
-func GetPathSize(path string) int {
-	stat, _ := os.Lstat(path)
-	size := 0
+func getSize(path string, listHidden bool, recursive bool) (int, error) {
+	stat, err := os.Lstat(path)
+	if err != nil {
+		return 0, err
+	}
 	if stat.IsDir() {
-		size += getFolderSize(path)
-	} else {
-		size = int(stat.Size())
+		return getFolderSize(path, listHidden, recursive)
 	}
-	return size
+	return int(stat.Size()), nil
 }
 
-func getFolderSize(folderPath string) int {
-	files, _ := os.ReadDir(folderPath)
+func getFolderSize(folderPath string, listHidden bool, recursive bool) (int, error) {
+	files, err := os.ReadDir(folderPath)
+	if err != nil {
+		return 0, err
+	}
 	folderSize := 0
 	for _, file := range files {
-		if !ListHidden && file.Name()[0] == '.' {
+		if !listHidden && file.Name()[0] == '.' {
 			continue
 		}
-		if !Recursive && file.IsDir() {
+		if !recursive && file.IsDir() {
 			continue
 		}
-		folderSize += GetPathSize(filepath.Join(folderPath, file.Name()))
+		size, err := getSize(filepath.Join(folderPath, file.Name()), listHidden, recursive)
+		if err != nil {
+			return 0, err
+		}
+		folderSize += size
 	}
-	return folderSize
+	return folderSize, nil
 }
