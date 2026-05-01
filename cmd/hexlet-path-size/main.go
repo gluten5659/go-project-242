@@ -9,7 +9,10 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var listHidden bool
+var (
+	listHidden bool
+	recursive  bool
+)
 
 func main() {
 	var formatNeeded bool
@@ -26,6 +29,12 @@ func main() {
 				Usage:       "Allow hidden files",
 				Aliases:     []string{"a"},
 				Destination: &listHidden,
+			},
+			&cli.BoolFlag{
+				Name:        "recursive",
+				Usage:       "Recursive sizes",
+				Aliases:     []string{"r"},
+				Destination: &recursive,
 			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -82,7 +91,12 @@ func getFolderSize(folderPath string) int {
 		if !listHidden && file.Name()[0] == '.' {
 			continue
 		}
-		folderSize += GetSize(folderPath + `/` + file.Name())
+		path := folderPath + `/` + file.Name()
+		stat, _ := os.Lstat(path)
+		if !recursive && stat.IsDir() {
+			continue
+		}
+		folderSize += GetSize(path)
 	}
 	return folderSize
 }
