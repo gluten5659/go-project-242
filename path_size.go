@@ -17,7 +17,7 @@ var Sizes = []string{
 	"PLZ NO MORE",
 }
 
-func GetPathSize(path string, formatNeeded bool, listHidden bool, recursive bool) (string, error) {
+func GetPathSize(path string, recursive bool, listHidden bool, formatNeeded bool) (string, error) {
 	size, err := getSize(path, listHidden, recursive)
 	if err != nil {
 		return "", err

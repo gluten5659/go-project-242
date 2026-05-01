@@ -41,7 +41,7 @@ func main() {
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			path := cmd.Args().Get(0)
-			result, err := code.GetPathSize(path, formatNeeded, listHidden, recursive)
+			result, err := code.GetPathSize(path, recursive, listHidden, formatNeeded)
 			if err != nil {
 				return err
 			}
