@@ -17,7 +17,7 @@ var Sizes = []string{
 	"PLZ NO MORE",
 }
 
-func GetPathSize(path string, recursive bool, listHidden bool, formatNeeded bool) (string, error) {
+func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool) (string, error) {
 	size, err := getSize(path, listHidden, recursive)
 	if err != nil {
 		return "", err
@@ -31,6 +31,9 @@ func GetPathSize(path string, recursive bool, listHidden bool, formatNeeded bool
 	for fsize > 1023.9 {
 		prefix++
 		fsize = fsize / 1024
+	}
+	if prefix == 0 {
+		return fmt.Sprintf("%.0fB", fsize), nil
 	}
 	return fmt.Sprintf("%.1f%s", fsize, Sizes[prefix]), nil
 }
