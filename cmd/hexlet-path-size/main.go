@@ -24,29 +24,21 @@ func main() {
 }
 
 func GetSize(path string) int {
-	size, err := getFileSize(path)
-	if err != nil {
-		size, _ = getFolderSize(path)
+	stat, _ := os.Lstat(path)
+	size := 0
+	if stat.IsDir() {
+		size += getFolderSize(path)
+	} else {
+		size = int(stat.Size())
 	}
 	return size
 }
 
-func getFileSize(filePath string) (int, error) {
-	stat, err := os.Lstat(filePath)
-	if err != nil {
-		return 0, err
-	}
-	return int(stat.Size()), nil
-}
-
-func getFolderSize(folderPath string) (int, error) {
-	files, err := os.ReadDir(folderPath)
-	if err != nil {
-		return 0, err
-	}
+func getFolderSize(folderPath string) int {
+	files, _ := os.ReadDir(folderPath)
 	folderSize := 0
 	for _, file := range files {
-		folderSize += GetSize(file.Name())
+		folderSize += GetSize(folderPath + `/` + file.Name())
 	}
-	return folderSize, nil
+	return folderSize
 }
