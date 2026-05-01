@@ -9,6 +9,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var listHidden bool
+
 func main() {
 	var formatNeeded bool
 	cmd := &cli.Command{
@@ -18,6 +20,12 @@ func main() {
 				Usage:       "Converts B into more readable KB/MB/GB etc.",
 				Aliases:     []string{"H"},
 				Destination: &formatNeeded,
+			},
+			&cli.BoolFlag{
+				Name:        "all",
+				Usage:       "Allow hidden files",
+				Aliases:     []string{"a"},
+				Destination: &listHidden,
 			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -71,6 +79,9 @@ func getFolderSize(folderPath string) int {
 	files, _ := os.ReadDir(folderPath)
 	folderSize := 0
 	for _, file := range files {
+		if !listHidden && file.Name()[0] == '.' {
+			continue
+		}
 		folderSize += GetSize(folderPath + `/` + file.Name())
 	}
 	return folderSize
