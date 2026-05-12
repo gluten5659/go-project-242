@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-var Sizes = []string{
+var sizes = []string{
 	"B",
 	"KB",
 	"MB",
@@ -14,7 +14,6 @@ var Sizes = []string{
 	"TB",
 	"PB",
 	"EB",
-	"PLZ NO MORE",
 }
 
 func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool) (string, error) {
@@ -22,23 +21,28 @@ func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool
 	if err != nil {
 		return "", err
 	}
-
-	fsize := float64(size)
-	prefix := 0
-	if !formatNeeded {
-		return fmt.Sprintf("%.0fB", fsize), nil
-	}
-	for fsize > 1023.9 {
-		prefix++
-		fsize = fsize / 1024
-	}
-	if prefix == 0 {
-		return fmt.Sprintf("%.0fB", fsize), nil
-	}
-	return fmt.Sprintf("%.1f%s", fsize, Sizes[prefix]), nil
+	return formatOutput(size, formatNeeded), nil
 }
 
-func getSize(path string, listHidden bool, recursive bool) (int, error) {
+func formatOutput(byteCount int64, formatNeeded bool) string {
+	floatSize, prefix := pickUnit(byteCount)
+	if !formatNeeded || prefix == "B" {
+		return fmt.Sprintf("%dB", byteCount)
+	}
+	return fmt.Sprintf("%.1f%s", floatSize, prefix)
+}
+
+func pickUnit(byteCount int64) (float64, string) {
+	floatBytesCount := float64(byteCount)
+	prefixIndex := 0
+	for floatBytesCount >= 1024 {
+		prefixIndex++
+		floatBytesCount = floatBytesCount / 1024
+	}
+	return floatBytesCount, sizes[prefixIndex]
+}
+
+func getSize(path string, listHidden bool, recursive bool) (int64, error) {
 	stat, err := os.Lstat(path)
 	if err != nil {
 		return 0, err
@@ -46,15 +50,15 @@ func getSize(path string, listHidden bool, recursive bool) (int, error) {
 	if stat.IsDir() {
 		return getFolderSize(path, listHidden, recursive)
 	}
-	return int(stat.Size()), nil
+	return stat.Size(), nil
 }
 
-func getFolderSize(folderPath string, listHidden bool, recursive bool) (int, error) {
+func getFolderSize(folderPath string, listHidden bool, recursive bool) (int64, error) {
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
 		return 0, err
 	}
-	folderSize := 0
+	var folderSize int64
 	for _, file := range files {
 		if !listHidden && file.Name()[0] == '.' {
 			continue
