@@ -30,7 +30,7 @@ func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool
 	}
 	for fsize > 1023.9 {
 		prefix++
-		fsize = fsize / 1024
+		fsize /= 1024
 	}
 	if prefix == 0 {
 		return fmt.Sprintf("%.0fB", fsize), nil
