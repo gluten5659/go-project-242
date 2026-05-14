@@ -3,19 +3,30 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
-	code "code"
+	"code"
 
 	"github.com/urfave/cli/v3"
 )
 
 func main() {
+	output, path, err := runCli(os.Args)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	fmt.Printf("%s\t%s\n", output, path)
+}
+
+func runCli(args []string) (string, string, error) {
 	var (
 		formatNeeded bool
 		listHidden   bool
 		recursive    bool
+		result       string
+		path         string
+		err          error
 	)
 
 	cmd := &cli.Command{
@@ -40,16 +51,11 @@ func main() {
 			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			path := cmd.Args().Get(0)
-			result, err := code.GetPathSize(path, recursive, formatNeeded, listHidden)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("%s\t%s\n", result, path)
-			return nil
+			path = cmd.Args().Get(0)
+			result, err = code.GetPathSize(path, recursive, formatNeeded, listHidden)
+			return err
 		},
 	}
-	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		log.Fatal(err)
-	}
+	err = cmd.Run(context.Background(), args)
+	return result, path, err
 }
