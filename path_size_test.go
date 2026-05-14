@@ -96,6 +96,19 @@ func TestGetSize(t *testing.T) {
 			setup:   staticPath("/definitely/not/exists/here"),
 			wantErr: true,
 		},
+		{
+			desc: "symlink reports size of link entry, not target",
+			setup: func(t *testing.T) string {
+				t.Helper()
+				directory := t.TempDir()
+				linkPath := filepath.Join(directory, "link")
+				if err := os.Symlink("known-target", linkPath); err != nil {
+					t.Fatal(err)
+				}
+				return linkPath
+			},
+			want: int64(len("known-target")),
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
@@ -189,6 +202,19 @@ func TestGetFolderSize(t *testing.T) {
 			desc:    "nonexistent folder",
 			setup:   staticPath("/nope/nada/nothing"),
 			wantErr: true,
+		},
+		{
+			desc: "folder with symlink sums link entry size, not target",
+			setup: func(t *testing.T) string {
+				t.Helper()
+				directory := t.TempDir()
+				writeTestFile(t, directory, "a.txt", "hello")
+				if err := os.Symlink("xy", filepath.Join(directory, "link")); err != nil {
+					t.Fatal(err)
+				}
+				return directory
+			},
+			want: 5 + int64(len("xy")),
 		},
 		{
 			desc: "nested folder with 0600 mode breaks recursive walk",
