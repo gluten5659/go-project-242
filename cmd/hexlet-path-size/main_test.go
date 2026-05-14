@@ -145,6 +145,7 @@ func TestExitCodeFor(t *testing.T) {
 		{"usage error", ErrUsage, exitUsage},
 		{"path not found", code.ErrPathNotFound, exitNoInput},
 		{"permission denied", code.ErrPermissionDenied, exitPermission},
+		{"unsupported path", code.ErrUnsupportedPath, exitDataErr},
 		{"unknown error", errors.New("boom"), exitGeneric},
 	}
 	for _, tC := range testCases {
