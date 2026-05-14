@@ -3,6 +3,6 @@
 build:
 	go build -o bin/hexlet-path-size ./cmd/hexlet-path-size
 test:
-	go test ./...
+	go test -race ./...
 lint:
-	golangci-lint run
+	go tool golangci-lint run
