@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -51,6 +52,9 @@ func runCli(args []string) (string, string, error) {
 			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
+			if cmd.Args().Len() != 1 {
+				return errors.New("exactly one file path is required")
+			}
 			path = cmd.Args().Get(0)
 			result, err = code.GetPathSize(path, recursive, formatNeeded, listHidden)
 			return err

@@ -103,6 +103,30 @@ func TestRunCli(t *testing.T) {
 	}
 }
 
+func TestRunCliArgs(t *testing.T) {
+	testCases := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "no path returns error",
+			args: []string{"hexlet-path-size"},
+		},
+		{
+			desc: "two paths returns error",
+			args: []string{"hexlet-path-size", "/tmp/a", "/tmp/b"},
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			_, _, err := runCli(tC.args)
+			if err == nil {
+				t.Fatal("runCli expected error, got nil")
+			}
+		})
+	}
+}
+
 func tempFile(name, content string) func(*testing.T) string {
 	return func(t *testing.T) string {
 		t.Helper()
