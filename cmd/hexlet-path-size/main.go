@@ -17,6 +17,7 @@ const (
 	exitOK         = 0
 	exitGeneric    = 1
 	exitUsage      = 64
+	exitDataErr    = 65
 	exitNoInput    = 66
 	exitPermission = 77
 )
@@ -31,6 +32,8 @@ func exitCodeFor(err error) int {
 		return exitNoInput
 	case errors.Is(err, code.ErrPermissionDenied):
 		return exitPermission
+	case errors.Is(err, code.ErrUnsupportedPath):
+		return exitDataErr
 	default:
 		return exitGeneric
 	}

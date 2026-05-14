@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -111,6 +112,20 @@ func TestGetSize(t *testing.T) {
 				return linkPath
 			},
 			want: int64(len("known-target")),
+		},
+		{
+			desc: "FIFO returns ErrUnsupportedPath",
+			setup: func(t *testing.T) string {
+				t.Helper()
+				directory := t.TempDir()
+				fifoPath := filepath.Join(directory, "pipe")
+				if err := syscall.Mkfifo(fifoPath, 0o644); err != nil {
+					t.Fatal(err)
+				}
+				return fifoPath
+			},
+			wantErr:   true,
+			wantErrIs: ErrUnsupportedPath,
 		},
 	}
 	for _, tC := range testCases {

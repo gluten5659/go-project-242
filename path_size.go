@@ -11,6 +11,7 @@ import (
 var (
 	ErrPathNotFound     = errors.New("path not found")
 	ErrPermissionDenied = errors.New("permission denied")
+	ErrUnsupportedPath  = errors.New("unsupported path type")
 	ErrReadFailed       = errors.New("read failed")
 )
 
@@ -66,10 +67,15 @@ func getSize(path string, listHidden bool, recursive bool) (int64, error) {
 	if err != nil {
 		return 0, wrapFSError(err, path)
 	}
-	if stat.IsDir() {
+	mode := stat.Mode()
+	switch {
+	case mode.IsDir():
 		return getFolderSize(path, listHidden, recursive)
+	case mode.IsRegular(), mode&os.ModeSymlink != 0:
+		return stat.Size(), nil
+	default:
+		return 0, fmt.Errorf("%w: %q", ErrUnsupportedPath, path)
 	}
-	return stat.Size(), nil
 }
 
 func getFolderSize(folderPath string, listHidden bool, recursive bool) (int64, error) {
