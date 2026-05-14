@@ -29,6 +29,7 @@ func TestRunCli(t *testing.T) {
 		{
 			desc: "directory non-recursive ignores nested files",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "top.txt", "hello")
 				subDir := makeSubDir(t, directory, "sub")
@@ -40,6 +41,7 @@ func TestRunCli(t *testing.T) {
 		{
 			desc: "directory recursive sums nested files",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "top.txt", "hello")
 				subDir := makeSubDir(t, directory, "sub")
@@ -52,6 +54,7 @@ func TestRunCli(t *testing.T) {
 		{
 			desc: "hidden files excluded by default",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
@@ -62,6 +65,7 @@ func TestRunCli(t *testing.T) {
 		{
 			desc: "hidden files included with -a",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")

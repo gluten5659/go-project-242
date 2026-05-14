@@ -1,0 +1,47 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - durationcheck
+    - errname
+    - errorlint
+    - forcetypeassert
+    - gocritic
+    - intrange
+    - makezero
+    - misspell
+    - nakedret
+    - nilerr
+    - noctx
+    - predeclared
+    - reassign
+    - revive
+    - thelper
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+        - name: exported
+          disabled: true
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    paths:
+      - bin
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

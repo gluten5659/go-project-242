@@ -37,7 +37,7 @@ func pickUnit(byteCount int64) (float64, string) {
 	prefixIndex := 0
 	for floatBytesCount >= 1024 {
 		prefixIndex++
-		floatBytesCount = floatBytesCount / 1024
+		floatBytesCount /= 1024
 	}
 	return floatBytesCount, sizes[prefixIndex]
 }

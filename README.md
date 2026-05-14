@@ -39,3 +39,13 @@ bin/hexlet-path-size -r -a -H src/
 - `--human, -H` converts bytes into readable format (KB, MB, GB)
 - `--recursive, -r` includes subdirectories
 - `--all, -a` includes hidden files
+
+## Development
+
+```
+make build
+make test
+make lint
+```
+
+See `CONTRIBUTING.md` for details.

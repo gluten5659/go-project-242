@@ -84,6 +84,7 @@ func TestGetSize(t *testing.T) {
 		{
 			desc: "directory delegates to getFolderSize",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "12345")
 				return directory
@@ -120,13 +121,17 @@ func TestGetFolderSize(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			desc:  "empty folder",
-			setup: func(t *testing.T) string { return t.TempDir() },
-			want:  0,
+			desc: "empty folder",
+			setup: func(t *testing.T) string {
+				t.Helper()
+				return t.TempDir()
+			},
+			want: 0,
 		},
 		{
 			desc: "single file",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "hello")
 				return directory
@@ -136,6 +141,7 @@ func TestGetFolderSize(t *testing.T) {
 		{
 			desc: "multiple files summed",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "hello")
 				writeTestFile(t, directory, "b.txt", "world!")
@@ -146,6 +152,7 @@ func TestGetFolderSize(t *testing.T) {
 		{
 			desc: "hidden file excluded by default",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
@@ -157,6 +164,7 @@ func TestGetFolderSize(t *testing.T) {
 		{
 			desc: "hidden file included when listHidden is true",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
@@ -185,6 +193,7 @@ func TestGetFolderSize(t *testing.T) {
 		{
 			desc: "nested folder with 0600 mode breaks recursive walk",
 			setup: func(t *testing.T) string {
+				t.Helper()
 				directory := t.TempDir()
 				subDir := makeSubDir(t, directory, "locked")
 				writeTestFile(t, subDir, "inside.txt", "secret")
