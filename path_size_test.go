@@ -1,6 +1,7 @@
 package code
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,10 +62,11 @@ func TestPickUnit(t *testing.T) {
 
 func TestGetSize(t *testing.T) {
 	testCases := []struct {
-		desc    string
-		setup   func(t *testing.T) string
-		want    int64
-		wantErr bool
+		desc      string
+		setup     func(t *testing.T) string
+		want      int64
+		wantErr   bool
+		wantErrIs error
 	}{
 		{
 			desc:  "regular file with content",
@@ -92,9 +94,10 @@ func TestGetSize(t *testing.T) {
 			want: 5,
 		},
 		{
-			desc:    "nonexistent path",
-			setup:   staticPath("/definitely/not/exists/here"),
-			wantErr: true,
+			desc:      "nonexistent path",
+			setup:     staticPath("/definitely/not/exists/here"),
+			wantErr:   true,
+			wantErrIs: ErrPathNotFound,
 		},
 		{
 			desc: "symlink reports size of link entry, not target",
@@ -117,6 +120,9 @@ func TestGetSize(t *testing.T) {
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("getSize error = %v, wantErr %v", err, tC.wantErr)
 			}
+			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
+				t.Errorf("getSize error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
+			}
 			if got != tC.want {
 				t.Errorf("getSize = %d, want %d", got, tC.want)
 			}
@@ -132,6 +138,7 @@ func TestGetFolderSize(t *testing.T) {
 		recursive  bool
 		want       int64
 		wantErr    bool
+		wantErrIs  error
 	}{
 		{
 			desc: "empty folder",
@@ -199,9 +206,10 @@ func TestGetFolderSize(t *testing.T) {
 			want:      11,
 		},
 		{
-			desc:    "nonexistent folder",
-			setup:   staticPath("/nope/nada/nothing"),
-			wantErr: true,
+			desc:      "nonexistent folder",
+			setup:     staticPath("/nope/nada/nothing"),
+			wantErr:   true,
+			wantErrIs: ErrPathNotFound,
 		},
 		{
 			desc: "folder with symlink sums link entry size, not target",
@@ -233,6 +241,7 @@ func TestGetFolderSize(t *testing.T) {
 			},
 			recursive: true,
 			wantErr:   true,
+			wantErrIs: ErrPermissionDenied,
 		},
 	}
 	for _, tC := range testCases {
@@ -241,6 +250,9 @@ func TestGetFolderSize(t *testing.T) {
 			got, err := getFolderSize(folderPath, tC.listHidden, tC.recursive)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("getFolderSize error = %v, wantErr %v", err, tC.wantErr)
+			}
+			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
+				t.Errorf("getFolderSize error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
 			if got != tC.want {
 				t.Errorf("getFolderSize = %d, want %d", got, tC.want)
@@ -258,6 +270,7 @@ func TestGetPathSize(t *testing.T) {
 		listHidden   bool
 		want         string
 		wantErr      bool
+		wantErrIs    error
 	}{
 		{
 			desc:         "raw bytes for file",
@@ -279,9 +292,10 @@ func TestGetPathSize(t *testing.T) {
 			want:         "11B",
 		},
 		{
-			desc:    "nonexistent path returns error",
-			setup:   staticPath("/no/such/path"),
-			wantErr: true,
+			desc:      "nonexistent path returns error",
+			setup:     staticPath("/no/such/path"),
+			wantErr:   true,
+			wantErrIs: ErrPathNotFound,
 		},
 		{
 			desc:         "hidden file path is shown despite listHidden being false",
@@ -297,6 +311,9 @@ func TestGetPathSize(t *testing.T) {
 			got, err := GetPathSize(path, tC.recursive, tC.formatNeeded, tC.listHidden)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("GetPathSize error = %v, wantErr %v", err, tC.wantErr)
+			}
+			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
+				t.Errorf("GetPathSize error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
 			if got != tC.want {
 				t.Errorf("GetPathSize = %q, want %q", got, tC.want)
