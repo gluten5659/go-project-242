@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"code"
 )
 
 func TestRunCli(t *testing.T) {
@@ -13,6 +16,7 @@ func TestRunCli(t *testing.T) {
 		setup      func(t *testing.T) string
 		flags      []string
 		wantOutput string
+		wantErrIs  error
 		wantErr    bool
 	}{
 		{
@@ -75,9 +79,10 @@ func TestRunCli(t *testing.T) {
 			wantOutput: "7B",
 		},
 		{
-			desc:    "nonexistent path returns error",
-			setup:   staticPath("/no/such/path"),
-			wantErr: true,
+			desc:      "nonexistent path returns error",
+			setup:     staticPath("/no/such/path"),
+			wantErr:   true,
+			wantErrIs: code.ErrPathNotFound,
 		},
 	}
 	for _, tC := range testCases {
@@ -89,6 +94,9 @@ func TestRunCli(t *testing.T) {
 			output, gotPath, err := runCli(args)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("runCli error = %v, wantErr %v", err, tC.wantErr)
+			}
+			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
+				t.Errorf("runCli error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
 			if tC.wantErr {
 				return
@@ -120,8 +128,30 @@ func TestRunCliArgs(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			_, _, err := runCli(tC.args)
-			if err == nil {
-				t.Fatal("runCli expected error, got nil")
+			if !errors.Is(err, ErrUsage) {
+				t.Fatalf("runCli error = %v, want errors.Is(_, ErrUsage)", err)
+			}
+		})
+	}
+}
+
+func TestExitCodeFor(t *testing.T) {
+	testCases := []struct {
+		desc string
+		err  error
+		want int
+	}{
+		{"no error", nil, exitOK},
+		{"usage error", ErrUsage, exitUsage},
+		{"path not found", code.ErrPathNotFound, exitNoInput},
+		{"permission denied", code.ErrPermissionDenied, exitPermission},
+		{"unknown error", errors.New("boom"), exitGeneric},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			got := exitCodeFor(tC.err)
+			if got != tC.want {
+				t.Errorf("exitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
 			}
 		})
 	}

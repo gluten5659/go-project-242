@@ -1,9 +1,17 @@
 package code
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+)
+
+var (
+	ErrPathNotFound     = errors.New("path not found")
+	ErrPermissionDenied = errors.New("permission denied")
+	ErrReadFailed       = errors.New("read failed")
 )
 
 var sizes = []string{
@@ -14,6 +22,17 @@ var sizes = []string{
 	"TB",
 	"PB",
 	"EB",
+}
+
+func wrapFSError(err error, path string) error {
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return fmt.Errorf("%w: %q", ErrPathNotFound, path)
+	case errors.Is(err, fs.ErrPermission):
+		return fmt.Errorf("%w: %q", ErrPermissionDenied, path)
+	default:
+		return fmt.Errorf("%w: %q: %w", ErrReadFailed, path, err)
+	}
 }
 
 func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool) (string, error) {
@@ -45,7 +64,7 @@ func pickUnit(byteCount int64) (float64, string) {
 func getSize(path string, listHidden bool, recursive bool) (int64, error) {
 	stat, err := os.Lstat(path)
 	if err != nil {
-		return 0, err
+		return 0, wrapFSError(err, path)
 	}
 	if stat.IsDir() {
 		return getFolderSize(path, listHidden, recursive)
@@ -56,7 +75,7 @@ func getSize(path string, listHidden bool, recursive bool) (int64, error) {
 func getFolderSize(folderPath string, listHidden bool, recursive bool) (int64, error) {
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
-		return 0, err
+		return 0, wrapFSError(err, folderPath)
 	}
 	var folderSize int64
 	for _, file := range files {
