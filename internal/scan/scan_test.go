@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"testing"
 )
@@ -52,6 +53,9 @@ func TestSize(t *testing.T) {
 			desc: "symlink reports size of link entry, not target",
 			setup: func(t *testing.T) string {
 				t.Helper()
+				if runtime.GOOS == "windows" {
+					t.Skip("symlinks require special privileges on Windows")
+				}
 				directory := t.TempDir()
 				linkPath := filepath.Join(directory, "link")
 				if err := os.Symlink("known-target", linkPath); err != nil {
@@ -180,6 +184,9 @@ func TestSizeFolder(t *testing.T) {
 			desc: "folder with symlink sums link entry size, not target",
 			setup: func(t *testing.T) string {
 				t.Helper()
+				if runtime.GOOS == "windows" {
+					t.Skip("symlinks require special privileges on Windows")
+				}
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "hello")
 				if err := os.Symlink("xy", filepath.Join(directory, "link")); err != nil {
