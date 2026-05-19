@@ -48,4 +48,8 @@ make test
 make lint
 ```
 
-See `CONTRIBUTING.md` for details.
+Run tests with coverage:
+
+```
+go test -cover ./...
+```
