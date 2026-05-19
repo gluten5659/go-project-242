@@ -8,6 +8,9 @@ import (
 
 	"code"
 
+	"code/internal/humanize"
+	"code/internal/scan"
+
 	"github.com/urfave/cli/v3"
 )
 
@@ -28,11 +31,11 @@ func exitCodeFor(err error) int {
 		return exitOK
 	case errors.Is(err, ErrUsage):
 		return exitUsage
-	case errors.Is(err, code.ErrPathNotFound):
+	case errors.Is(err, scan.ErrPathNotFound):
 		return exitNoInput
-	case errors.Is(err, code.ErrPermissionDenied):
+	case errors.Is(err, scan.ErrPermissionDenied):
 		return exitPermission
-	case errors.Is(err, code.ErrUnsupportedPath):
+	case errors.Is(err, scan.ErrUnsupportedPath):
 		return exitDataErr
 	default:
 		return exitGeneric
@@ -45,7 +48,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(exitCodeFor(err))
 	}
-	fmt.Printf("%s\t%s\n", output, path)
+	fmt.Println(humanize.Line(output, path))
 }
 
 func runCli(args []string) (string, string, error) {
