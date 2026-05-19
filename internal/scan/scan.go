@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -49,7 +50,7 @@ func getFolderSize(folderPath string, listHidden bool, recursive bool) (int64, e
 	}
 	var folderSize int64
 	for _, file := range files {
-		if !listHidden && file.Name()[0] == '.' {
+		if !listHidden && strings.HasPrefix(file.Name(), ".") {
 			continue
 		}
 		if !recursive && file.IsDir() {
