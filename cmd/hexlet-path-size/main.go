@@ -62,7 +62,7 @@ func runCli(args []string) (string, string, error) {
 	)
 
 	cmd := &cli.Command{
-		Name:      "hexlet-path-sizeh",
+		Name:      "hexlet-path-size",
 		Usage:     "print size of a file or directory",
 		ArgsUsage: "<path>",
 		Flags: []cli.Flag{
