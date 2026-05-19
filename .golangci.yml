@@ -19,6 +19,7 @@ linters:
     - nakedret
     - nilerr
     - noctx
+    - paralleltest
     - predeclared
     - reassign
     - revive

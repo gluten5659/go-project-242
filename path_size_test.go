@@ -11,6 +11,7 @@ import (
 )
 
 func TestGetPathSize(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc         string
 		setup        func(t *testing.T) string
@@ -56,6 +57,7 @@ func TestGetPathSize(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			path := tC.setup(t)
 			got, err := GetPathSize(path, tC.recursive, tC.formatNeeded, tC.listHidden)
 			if (err != nil) != tC.wantErr {
