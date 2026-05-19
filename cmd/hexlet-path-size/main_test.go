@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"code"
+	"code/internal/scan"
 )
 
 func TestRunCli(t *testing.T) {
@@ -82,7 +82,7 @@ func TestRunCli(t *testing.T) {
 			desc:      "nonexistent path returns error",
 			setup:     staticPath("/no/such/path"),
 			wantErr:   true,
-			wantErrIs: code.ErrPathNotFound,
+			wantErrIs: scan.ErrPathNotFound,
 		},
 	}
 	for _, tC := range testCases {
@@ -143,9 +143,9 @@ func TestExitCodeFor(t *testing.T) {
 	}{
 		{"no error", nil, exitOK},
 		{"usage error", ErrUsage, exitUsage},
-		{"path not found", code.ErrPathNotFound, exitNoInput},
-		{"permission denied", code.ErrPermissionDenied, exitPermission},
-		{"unsupported path", code.ErrUnsupportedPath, exitDataErr},
+		{"path not found", scan.ErrPathNotFound, exitNoInput},
+		{"permission denied", scan.ErrPermissionDenied, exitPermission},
+		{"unsupported path", scan.ErrUnsupportedPath, exitDataErr},
 		{"unknown error", errors.New("boom"), exitGeneric},
 	}
 	for _, tC := range testCases {

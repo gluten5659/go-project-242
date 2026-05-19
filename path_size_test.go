@@ -5,276 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
+
+	"code/internal/scan"
 )
-
-func TestFormatSize(t *testing.T) {
-	testCases := []struct {
-		desc         string
-		byteCount    int64
-		formatNeeded bool
-		want         string
-	}{
-		{"raw bytes when format disabled", 1500, false, "1500B"},
-		{"under 1KB stays as bytes", 500, true, "500B"},
-		{"exactly 1023 bytes stays as bytes", 1024 - 1, true, "1023B"},
-		{"exactly 1KB", 1024, true, "1.0KB"},
-		{"1.5 MB", 1024 * 1024 * 3 / 2, true, "1.5MB"},
-		{"2 GB", 1024 * 1024 * 1024 * 2, true, "2.0GB"},
-		{"zero", 0, true, "0B"},
-	}
-
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			got := formatOutput(tC.byteCount, tC.formatNeeded)
-			if got != tC.want {
-				t.Errorf("formatOutput(%d, %v) = %q, want %q",
-					tC.byteCount, tC.formatNeeded, got, tC.want)
-			}
-		})
-	}
-}
-
-func TestPickUnit(t *testing.T) {
-	testCases := []struct {
-		desc      string
-		byteCount int64
-		wantValue float64
-		wantUnit  string
-	}{
-		{"zero", 0, 0, "B"},
-		{"1023", 1024 - 1, 1023, "B"},
-		{"1024", 1024, 1, "KB"},
-		{"1.5 KB", 1024 * 3 / 2, 1.5, "KB"},
-		{"1 EB", 1024 * 1024 * 1024 * 1024 * 1024 * 1024, 1, "EB"},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			gotValue, gotUnit := pickUnit(tC.byteCount)
-			if gotValue != tC.wantValue || gotUnit != tC.wantUnit {
-				t.Errorf("pickUnit(%d) = (%v, %q), want (%v, %q)",
-					tC.byteCount, gotValue, gotUnit,
-					tC.wantValue, tC.wantUnit)
-			}
-		})
-	}
-}
-
-func TestGetSize(t *testing.T) {
-	testCases := []struct {
-		desc      string
-		setup     func(t *testing.T) string
-		want      int64
-		wantErr   bool
-		wantErrIs error
-	}{
-		{
-			desc:  "regular file with content",
-			setup: tempFile("data.txt", "hello"),
-			want:  5,
-		},
-		{
-			desc:  "empty file",
-			setup: tempFile("empty.txt", ""),
-			want:  0,
-		},
-		{
-			desc:  "hidden file passed directly is counted even when listHidden is false",
-			setup: tempFile(".secret.txt", "shh"),
-			want:  3,
-		},
-		{
-			desc: "directory delegates to getFolderSize",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "12345")
-				return directory
-			},
-			want: 5,
-		},
-		{
-			desc:      "nonexistent path",
-			setup:     staticPath("/definitely/not/exists/here"),
-			wantErr:   true,
-			wantErrIs: ErrPathNotFound,
-		},
-		{
-			desc: "symlink reports size of link entry, not target",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				linkPath := filepath.Join(directory, "link")
-				if err := os.Symlink("known-target", linkPath); err != nil {
-					t.Fatal(err)
-				}
-				return linkPath
-			},
-			want: int64(len("known-target")),
-		},
-		{
-			desc: "FIFO returns ErrUnsupportedPath",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				fifoPath := filepath.Join(directory, "pipe")
-				if err := syscall.Mkfifo(fifoPath, 0o644); err != nil {
-					t.Fatal(err)
-				}
-				return fifoPath
-			},
-			wantErr:   true,
-			wantErrIs: ErrUnsupportedPath,
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			path := tC.setup(t)
-			got, err := getSize(path, false, false)
-			if (err != nil) != tC.wantErr {
-				t.Fatalf("getSize error = %v, wantErr %v", err, tC.wantErr)
-			}
-			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
-				t.Errorf("getSize error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
-			}
-			if got != tC.want {
-				t.Errorf("getSize = %d, want %d", got, tC.want)
-			}
-		})
-	}
-}
-
-func TestGetFolderSize(t *testing.T) {
-	testCases := []struct {
-		desc       string
-		setup      func(t *testing.T) string
-		listHidden bool
-		recursive  bool
-		want       int64
-		wantErr    bool
-		wantErrIs  error
-	}{
-		{
-			desc: "empty folder",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				return t.TempDir()
-			},
-			want: 0,
-		},
-		{
-			desc: "single file",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "hello")
-				return directory
-			},
-			want: 5,
-		},
-		{
-			desc: "multiple files summed",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "hello")
-				writeTestFile(t, directory, "b.txt", "world!")
-				return directory
-			},
-			want: 11,
-		},
-		{
-			desc: "hidden file excluded by default",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				writeTestFile(t, directory, "visible.txt", "hello")
-				writeTestFile(t, directory, ".hidden.txt", "xx")
-				return directory
-			},
-			listHidden: false,
-			want:       5,
-		},
-		{
-			desc: "hidden file included when listHidden is true",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				writeTestFile(t, directory, "visible.txt", "hello")
-				writeTestFile(t, directory, ".hidden.txt", "xx")
-				return directory
-			},
-			listHidden: true,
-			want:       7,
-		},
-		{
-			desc:      "non-recursive skips nested folder",
-			setup:     nestedTree("hello", "ignored"),
-			recursive: false,
-			want:      5,
-		},
-		{
-			desc:      "recursive includes nested folder",
-			setup:     nestedTree("hello", "world!"),
-			recursive: true,
-			want:      11,
-		},
-		{
-			desc:      "nonexistent folder",
-			setup:     staticPath("/nope/nada/nothing"),
-			wantErr:   true,
-			wantErrIs: ErrPathNotFound,
-		},
-		{
-			desc: "folder with symlink sums link entry size, not target",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "hello")
-				if err := os.Symlink("xy", filepath.Join(directory, "link")); err != nil {
-					t.Fatal(err)
-				}
-				return directory
-			},
-			want: 5 + int64(len("xy")),
-		},
-		{
-			desc: "nested folder with 0600 mode breaks recursive walk",
-			setup: func(t *testing.T) string {
-				t.Helper()
-				directory := t.TempDir()
-				subDir := makeSubDir(t, directory, "locked")
-				writeTestFile(t, subDir, "inside.txt", "secret")
-				if err := os.Chmod(subDir, 0600); err != nil {
-					t.Fatal(err)
-				}
-				t.Cleanup(func() {
-					_ = os.Chmod(subDir, 0700)
-				})
-				return directory
-			},
-			recursive: true,
-			wantErr:   true,
-			wantErrIs: ErrPermissionDenied,
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			folderPath := tC.setup(t)
-			got, err := getFolderSize(folderPath, tC.listHidden, tC.recursive)
-			if (err != nil) != tC.wantErr {
-				t.Fatalf("getFolderSize error = %v, wantErr %v", err, tC.wantErr)
-			}
-			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
-				t.Errorf("getFolderSize error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
-			}
-			if got != tC.want {
-				t.Errorf("getFolderSize = %d, want %d", got, tC.want)
-			}
-		})
-	}
-}
 
 func TestGetPathSize(t *testing.T) {
 	testCases := []struct {
@@ -310,7 +44,7 @@ func TestGetPathSize(t *testing.T) {
 			desc:      "nonexistent path returns error",
 			setup:     staticPath("/no/such/path"),
 			wantErr:   true,
-			wantErrIs: ErrPathNotFound,
+			wantErrIs: scan.ErrPathNotFound,
 		},
 		{
 			desc:         "hidden file path is shown despite listHidden being false",
@@ -362,7 +96,7 @@ func staticPath(path string) func(*testing.T) string {
 func writeTestFile(t *testing.T, directory, name, content string) string {
 	t.Helper()
 	path := filepath.Join(directory, name)
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	return path
@@ -371,7 +105,7 @@ func writeTestFile(t *testing.T, directory, name, content string) string {
 func makeSubDir(t *testing.T, parent, name string) string {
 	t.Helper()
 	path := filepath.Join(parent, name)
-	if err := os.MkdirAll(path, 0755); err != nil {
+	if err := os.MkdirAll(path, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return path
