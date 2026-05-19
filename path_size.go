@@ -28,9 +28,9 @@ var sizes = []string{
 func wrapFSError(err error, path string) error {
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return fmt.Errorf("%w: %q", ErrPathNotFound, path)
+		return fmt.Errorf("%w: %q: %w", ErrPathNotFound, path, err)
 	case errors.Is(err, fs.ErrPermission):
-		return fmt.Errorf("%w: %q", ErrPermissionDenied, path)
+		return fmt.Errorf("%w: %q: %w", ErrPermissionDenied, path, err)
 	default:
 		return fmt.Errorf("%w: %q: %w", ErrReadFailed, path, err)
 	}
