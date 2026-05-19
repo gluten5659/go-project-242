@@ -11,6 +11,7 @@ import (
 )
 
 func TestRunCli(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc       string
 		setup      func(t *testing.T) string
@@ -87,6 +88,7 @@ func TestRunCli(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			path := tC.setup(t)
 			args := append([]string{"hexlet-path-size"}, tC.flags...)
 			args = append(args, path)
@@ -112,6 +114,7 @@ func TestRunCli(t *testing.T) {
 }
 
 func TestRunCliArgs(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc string
 		args []string
@@ -127,6 +130,7 @@ func TestRunCliArgs(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			_, _, err := runCli(tC.args)
 			if !errors.Is(err, ErrUsage) {
 				t.Fatalf("runCli error = %v, want errors.Is(_, ErrUsage)", err)
@@ -136,6 +140,7 @@ func TestRunCliArgs(t *testing.T) {
 }
 
 func TestExitCodeFor(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc string
 		err  error
@@ -150,6 +155,7 @@ func TestExitCodeFor(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			got := exitCodeFor(tC.err)
 			if got != tC.want {
 				t.Errorf("exitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)

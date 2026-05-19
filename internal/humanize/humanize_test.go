@@ -3,6 +3,7 @@ package humanize
 import "testing"
 
 func TestFormat(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc         string
 		byteCount    int64
@@ -19,6 +20,7 @@ func TestFormat(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			got := Format(tC.byteCount, tC.formatNeeded)
 			if got != tC.want {
 				t.Errorf("Format(%d, %v) = %q, want %q",
@@ -29,6 +31,7 @@ func TestFormat(t *testing.T) {
 }
 
 func TestPickUnit(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc      string
 		byteCount int64
@@ -43,6 +46,7 @@ func TestPickUnit(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotUnit := pickUnit(tC.byteCount)
 			if gotValue != tC.wantValue || gotUnit != tC.wantUnit {
 				t.Errorf("pickUnit(%d) = (%v, %q), want (%v, %q)",
@@ -54,6 +58,7 @@ func TestPickUnit(t *testing.T) {
 }
 
 func TestLine(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc   string
 		output string
@@ -66,6 +71,7 @@ func TestLine(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			got := Line(tC.output, tC.path)
 			if got != tC.want {
 				t.Errorf("Line(%q, %q) = %q, want %q",

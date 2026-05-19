@@ -9,6 +9,7 @@ import (
 )
 
 func TestSize(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc      string
 		setup     func(t *testing.T) string
@@ -77,6 +78,7 @@ func TestSize(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			path := tC.setup(t)
 			got, err := Size(path, false, false)
 			if (err != nil) != tC.wantErr {
@@ -93,6 +95,7 @@ func TestSize(t *testing.T) {
 }
 
 func TestSizeFolder(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		desc       string
 		setup      func(t *testing.T) string
@@ -208,6 +211,7 @@ func TestSizeFolder(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 			folderPath := tC.setup(t)
 			got, err := Size(folderPath, tC.listHidden, tC.recursive)
 			if (err != nil) != tC.wantErr {
