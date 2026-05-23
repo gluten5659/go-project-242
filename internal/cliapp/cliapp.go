@@ -96,11 +96,14 @@ func RunCli(args []string) (string, string, error) {
 			if cmd.Args().Len() != 1 {
 				return fmt.Errorf("%w: exactly one file path is required", ErrUsage)
 			}
+
 			path = cmd.Args().Get(0)
 			result, err = code.GetPathSize(path, recursive, formatNeeded, includeHidden)
+
 			return err
 		},
 	}
 	err = cmd.Run(context.Background(), args)
+
 	return result, path, err
 }

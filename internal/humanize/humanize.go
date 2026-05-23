@@ -18,7 +18,9 @@ func Format(byteCount int64, formatNeeded bool) string {
 	if !formatNeeded || byteCount < unitBase {
 		return fmt.Sprintf("%dB", byteCount)
 	}
+
 	value, suffix := scaleToUnit(byteCount)
+
 	return fmt.Sprintf("%.1f%s", value, suffix)
 }
 
@@ -28,8 +30,10 @@ func scaleToUnit(byteCount int64) (float64, string) {
 		if value < unitBase {
 			return value, suffix
 		}
+
 		value /= unitBase
 	}
+
 	return value, unitSuffixes[len(unitSuffixes)-1]
 }
 

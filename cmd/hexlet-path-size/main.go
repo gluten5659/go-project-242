@@ -14,5 +14,6 @@ func main() {
 		fmt.Fprintln(os.Stderr, cliapp.UserMessage(err, path))
 		os.Exit(cliapp.ExitCodeFor(err))
 	}
+
 	fmt.Println(humanize.FormatLine(output, path))
 }

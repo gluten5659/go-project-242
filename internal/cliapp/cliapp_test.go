@@ -13,6 +13,7 @@ import (
 
 func TestRunCli(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc       string
 		setup      func(t *testing.T) string
@@ -40,6 +41,7 @@ func TestRunCli(t *testing.T) {
 				writeTestFile(t, directory, "top.txt", "hello")
 				subDir := makeSubDir(t, directory, "sub")
 				writeTestFile(t, subDir, "nested.txt", "ignored")
+
 				return directory
 			},
 			wantOutput: "5B",
@@ -52,6 +54,7 @@ func TestRunCli(t *testing.T) {
 				writeTestFile(t, directory, "top.txt", "hello")
 				subDir := makeSubDir(t, directory, "sub")
 				writeTestFile(t, subDir, "nested.txt", "world!")
+
 				return directory
 			},
 			flags:      []string{"-r"},
@@ -64,6 +67,7 @@ func TestRunCli(t *testing.T) {
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
+
 				return directory
 			},
 			wantOutput: "5B",
@@ -75,6 +79,7 @@ func TestRunCli(t *testing.T) {
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
+
 				return directory
 			},
 			flags:      []string{"-a"},
@@ -98,15 +103,19 @@ func TestRunCli(t *testing.T) {
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("RunCli error = %v, wantErr %v", err, tC.wantErr)
 			}
+
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
 				t.Errorf("RunCli error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
+
 			if tC.wantErr {
 				return
 			}
+
 			if output != tC.wantOutput {
 				t.Errorf("RunCli output = %q, want %q", output, tC.wantOutput)
 			}
+
 			if gotPath != path {
 				t.Errorf("RunCli path = %q, want %q", gotPath, path)
 			}
@@ -116,6 +125,7 @@ func TestRunCli(t *testing.T) {
 
 func TestRunCliArgs(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		args []string
@@ -132,6 +142,7 @@ func TestRunCliArgs(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			_, _, err := RunCli(tC.args)
 			if !errors.Is(err, ErrUsage) {
 				t.Fatalf("RunCli error = %v, want errors.Is(_, ErrUsage)", err)
@@ -142,6 +153,7 @@ func TestRunCliArgs(t *testing.T) {
 
 func TestUserMessage(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		err  error
@@ -189,6 +201,7 @@ func TestUserMessage(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			got := UserMessage(tC.err, tC.path)
 			if got != tC.want {
 				t.Errorf("UserMessage(%v, %q) = %q, want %q", tC.err, tC.path, got, tC.want)
@@ -199,6 +212,7 @@ func TestUserMessage(t *testing.T) {
 
 func TestExitCodeFor(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		err  error
@@ -214,6 +228,7 @@ func TestExitCodeFor(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			got := ExitCodeFor(tC.err)
 			if got != tC.want {
 				t.Errorf("ExitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
@@ -225,6 +240,7 @@ func TestExitCodeFor(t *testing.T) {
 func tempFile(name, content string) func(*testing.T) string {
 	return func(t *testing.T) string {
 		t.Helper()
+
 		return writeTestFile(t, t.TempDir(), name, content)
 	}
 }
@@ -235,18 +251,22 @@ func staticPath(path string) func(*testing.T) string {
 
 func writeTestFile(t *testing.T, directory, name, content string) string {
 	t.Helper()
+
 	path := filepath.Join(directory, name)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+
 	return path
 }
 
 func makeSubDir(t *testing.T, parent, name string) string {
 	t.Helper()
+
 	path := filepath.Join(parent, name)
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	return path
 }

@@ -12,6 +12,7 @@ import (
 
 func TestGetPathSize(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc         string
 		setup        func(t *testing.T) string
@@ -59,13 +60,16 @@ func TestGetPathSize(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			path := tC.setup(t)
+
 			got, err := GetPathSize(path, tC.recursive, tC.formatNeeded, tC.listHidden)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("GetPathSize error = %v, wantErr %v", err, tC.wantErr)
 			}
+
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
 				t.Errorf("GetPathSize error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
+
 			if got != tC.want {
 				t.Errorf("GetPathSize = %q, want %q", got, tC.want)
 			}
@@ -76,6 +80,7 @@ func TestGetPathSize(t *testing.T) {
 func tempFile(name, content string) func(*testing.T) string {
 	return func(t *testing.T) string {
 		t.Helper()
+
 		return writeTestFile(t, t.TempDir(), name, content)
 	}
 }
@@ -87,6 +92,7 @@ func nestedTree(topContent, nestedContent string) func(*testing.T) string {
 		writeTestFile(t, directory, "top.txt", topContent)
 		subDir := makeSubDir(t, directory, "sub")
 		writeTestFile(t, subDir, "nested.txt", nestedContent)
+
 		return directory
 	}
 }
@@ -97,18 +103,22 @@ func staticPath(path string) func(*testing.T) string {
 
 func writeTestFile(t *testing.T, directory, name, content string) string {
 	t.Helper()
+
 	path := filepath.Join(directory, name)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+
 	return path
 }
 
 func makeSubDir(t *testing.T, parent, name string) string {
 	t.Helper()
+
 	path := filepath.Join(parent, name)
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	return path
 }

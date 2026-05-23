@@ -32,6 +32,7 @@ func Measure(path string, includeHidden, recursive bool) (int64, error) {
 	if err != nil {
 		return 0, wrapFSError(err, path)
 	}
+
 	mode := stat.Mode()
 	switch {
 	case mode.IsDir():
@@ -50,21 +51,28 @@ func measureFolder(folderPath string, includeHidden bool, recursive bool) (int64
 	if err != nil {
 		return 0, wrapFSError(err, folderPath)
 	}
+
 	var folderSize int64
+
 	for _, file := range files {
 		if !includeHidden && isHiddenName(file.Name()) {
 			continue
 		}
+
 		if !recursive && file.IsDir() {
 			continue
 		}
+
 		childPath := filepath.Join(folderPath, file.Name())
+
 		size, err := Measure(childPath, includeHidden, recursive)
 		if err != nil {
 			return 0, err
 		}
+
 		folderSize += size
 	}
+
 	return folderSize, nil
 }
 

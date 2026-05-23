@@ -4,6 +4,7 @@ import "testing"
 
 func TestFormat(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc         string
 		byteCount    int64
@@ -21,6 +22,7 @@ func TestFormat(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			got := Format(tC.byteCount, tC.formatNeeded)
 			if got != tC.want {
 				t.Errorf("Format(%d, %v) = %q, want %q",
@@ -32,6 +34,7 @@ func TestFormat(t *testing.T) {
 
 func TestScaleToUnit(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc      string
 		byteCount int64
@@ -47,6 +50,7 @@ func TestScaleToUnit(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			gotValue, gotUnit := scaleToUnit(tC.byteCount)
 			if gotValue != tC.wantValue || gotUnit != tC.wantUnit {
 				t.Errorf("scaleToUnit(%d) = (%v, %q), want (%v, %q)",
@@ -59,6 +63,7 @@ func TestScaleToUnit(t *testing.T) {
 
 func TestFormatLine(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc   string
 		output string
@@ -72,6 +77,7 @@ func TestFormatLine(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			got := FormatLine(tC.output, tC.path)
 			if got != tC.want {
 				t.Errorf("FormatLine(%q, %q) = %q, want %q",

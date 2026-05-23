@@ -11,6 +11,7 @@ import (
 
 func TestMeasure(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc      string
 		setup     func(t *testing.T) string
@@ -39,6 +40,7 @@ func TestMeasure(t *testing.T) {
 				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "12345")
+
 				return directory
 			},
 			want: 5,
@@ -53,14 +55,18 @@ func TestMeasure(t *testing.T) {
 			desc: "symlink reports size of link entry, not target",
 			setup: func(t *testing.T) string {
 				t.Helper()
+
 				if runtime.GOOS == "windows" {
 					t.Skip("symlinks require special privileges on Windows")
 				}
+
 				directory := t.TempDir()
+
 				linkPath := filepath.Join(directory, "link")
 				if err := os.Symlink("known-target", linkPath); err != nil {
 					t.Fatal(err)
 				}
+
 				return linkPath
 			},
 			want: int64(len("known-target")),
@@ -70,10 +76,12 @@ func TestMeasure(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
+
 				fifoPath := filepath.Join(directory, "pipe")
 				if err := syscall.Mkfifo(fifoPath, 0o644); err != nil {
 					t.Fatal(err)
 				}
+
 				return fifoPath
 			},
 			wantErr:   true,
@@ -84,13 +92,16 @@ func TestMeasure(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			path := tC.setup(t)
+
 			got, err := Measure(path, false, false)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("Measure error = %v, wantErr %v", err, tC.wantErr)
 			}
+
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
 				t.Errorf("Measure error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
+
 			if got != tC.want {
 				t.Errorf("Measure = %d, want %d", got, tC.want)
 			}
@@ -100,6 +111,7 @@ func TestMeasure(t *testing.T) {
 
 func TestMeasureFolder(t *testing.T) {
 	t.Parallel()
+
 	testCases := []struct {
 		desc          string
 		setup         func(t *testing.T) string
@@ -113,6 +125,7 @@ func TestMeasureFolder(t *testing.T) {
 			desc: "empty folder",
 			setup: func(t *testing.T) string {
 				t.Helper()
+
 				return t.TempDir()
 			},
 			want: 0,
@@ -123,6 +136,7 @@ func TestMeasureFolder(t *testing.T) {
 				t.Helper()
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "hello")
+
 				return directory
 			},
 			want: 5,
@@ -134,6 +148,7 @@ func TestMeasureFolder(t *testing.T) {
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "hello")
 				writeTestFile(t, directory, "b.txt", "world!")
+
 				return directory
 			},
 			want: 11,
@@ -145,6 +160,7 @@ func TestMeasureFolder(t *testing.T) {
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
+
 				return directory
 			},
 			includeHidden: false,
@@ -157,6 +173,7 @@ func TestMeasureFolder(t *testing.T) {
 				directory := t.TempDir()
 				writeTestFile(t, directory, "visible.txt", "hello")
 				writeTestFile(t, directory, ".hidden.txt", "xx")
+
 				return directory
 			},
 			includeHidden: true,
@@ -184,14 +201,18 @@ func TestMeasureFolder(t *testing.T) {
 			desc: "folder with symlink sums link entry size, not target",
 			setup: func(t *testing.T) string {
 				t.Helper()
+
 				if runtime.GOOS == "windows" {
 					t.Skip("symlinks require special privileges on Windows")
 				}
+
 				directory := t.TempDir()
 				writeTestFile(t, directory, "a.txt", "hello")
+
 				if err := os.Symlink("xy", filepath.Join(directory, "link")); err != nil {
 					t.Fatal(err)
 				}
+
 				return directory
 			},
 			want: 5 + int64(len("xy")),
@@ -203,12 +224,15 @@ func TestMeasureFolder(t *testing.T) {
 				directory := t.TempDir()
 				subDir := makeSubDir(t, directory, "locked")
 				writeTestFile(t, subDir, "inside.txt", "secret")
+
 				if err := os.Chmod(subDir, 0o600); err != nil {
 					t.Fatal(err)
 				}
+
 				t.Cleanup(func() {
 					_ = os.Chmod(subDir, 0o700)
 				})
+
 				return directory
 			},
 			recursive: true,
@@ -220,13 +244,16 @@ func TestMeasureFolder(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			folderPath := tC.setup(t)
+
 			got, err := Measure(folderPath, tC.includeHidden, tC.recursive)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("Measure error = %v, wantErr %v", err, tC.wantErr)
 			}
+
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
 				t.Errorf("Measure error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
+
 			if got != tC.want {
 				t.Errorf("Measure = %d, want %d", got, tC.want)
 			}
@@ -237,6 +264,7 @@ func TestMeasureFolder(t *testing.T) {
 func tempFile(name, content string) func(*testing.T) string {
 	return func(t *testing.T) string {
 		t.Helper()
+
 		return writeTestFile(t, t.TempDir(), name, content)
 	}
 }
@@ -248,6 +276,7 @@ func nestedTree(topContent, nestedContent string) func(*testing.T) string {
 		writeTestFile(t, directory, "top.txt", topContent)
 		subDir := makeSubDir(t, directory, "sub")
 		writeTestFile(t, subDir, "nested.txt", nestedContent)
+
 		return directory
 	}
 }
@@ -258,18 +287,22 @@ func staticPath(path string) func(*testing.T) string {
 
 func writeTestFile(t *testing.T, directory, name, content string) string {
 	t.Helper()
+
 	path := filepath.Join(directory, name)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+
 	return path
 }
 
 func makeSubDir(t *testing.T, parent, name string) string {
 	t.Helper()
+
 	path := filepath.Join(parent, name)
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	return path
 }

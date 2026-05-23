@@ -18,6 +18,8 @@ linters:
     - misspell
     - nakedret
     - nilerr
+    - nlreturn
+    - wsl_v5
     - noctx
     - paralleltest
     - predeclared

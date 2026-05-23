@@ -10,5 +10,6 @@ func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool
 	if err != nil {
 		return "", err
 	}
+
 	return humanize.Format(size, formatNeeded), nil
 }
