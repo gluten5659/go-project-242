@@ -36,7 +36,9 @@ func Measure(path string, includeHidden, recursive bool) (int64, error) {
 	switch {
 	case mode.IsDir():
 		return measureFolder(path, includeHidden, recursive)
-	case mode.IsRegular(), mode&os.ModeSymlink != 0:
+	case mode.IsRegular():
+		return stat.Size(), nil
+	case mode&os.ModeSymlink != 0:
 		return stat.Size(), nil
 	default:
 		return 0, fmt.Errorf("%w: %q", ErrUnsupportedPath, path)

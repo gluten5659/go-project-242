@@ -2,6 +2,7 @@ package cliapp
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -134,6 +135,63 @@ func TestRunCliArgs(t *testing.T) {
 			_, _, err := RunCli(tC.args)
 			if !errors.Is(err, ErrUsage) {
 				t.Fatalf("RunCli error = %v, want errors.Is(_, ErrUsage)", err)
+			}
+		})
+	}
+}
+
+func TestUserMessage(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		desc string
+		err  error
+		path string
+		want string
+	}{
+		{"no error", nil, "/x", ""},
+		{
+			desc: "usage error keeps its own message",
+			err:  fmt.Errorf("%w: exactly one file path is required", ErrUsage),
+			path: "",
+			want: "usage error: exactly one file path is required",
+		},
+		{
+			desc: "path not found",
+			err:  fmt.Errorf("%w: %q: underlying", scan.ErrPathNotFound, "/x"),
+			path: "/x",
+			want: `path not found: "/x"`,
+		},
+		{
+			desc: "permission denied",
+			err:  fmt.Errorf("%w: %q: underlying", scan.ErrPermissionDenied, "/x"),
+			path: "/x",
+			want: `permission denied: "/x"`,
+		},
+		{
+			desc: "unsupported file type",
+			err:  fmt.Errorf("%w: %q", scan.ErrUnsupportedPath, "/x"),
+			path: "/x",
+			want: `unsupported file type: "/x"`,
+		},
+		{
+			desc: "read failed",
+			err:  fmt.Errorf("%w: %q: underlying", scan.ErrReadFailed, "/x"),
+			path: "/x",
+			want: `cannot read: "/x"`,
+		},
+		{
+			desc: "unknown error falls back to its own message",
+			err:  errors.New("boom"),
+			path: "/x",
+			want: "boom",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+			got := UserMessage(tC.err, tC.path)
+			if got != tC.want {
+				t.Errorf("UserMessage(%v, %q) = %q, want %q", tC.err, tC.path, got, tC.want)
 			}
 		})
 	}

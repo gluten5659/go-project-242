@@ -22,6 +22,25 @@ const (
 	ExitPermission = 77
 )
 
+func UserMessage(err error, path string) string {
+	switch {
+	case err == nil:
+		return ""
+	case errors.Is(err, ErrUsage):
+		return err.Error()
+	case errors.Is(err, scan.ErrPathNotFound):
+		return fmt.Sprintf("path not found: %q", path)
+	case errors.Is(err, scan.ErrPermissionDenied):
+		return fmt.Sprintf("permission denied: %q", path)
+	case errors.Is(err, scan.ErrUnsupportedPath):
+		return fmt.Sprintf("unsupported file type: %q", path)
+	case errors.Is(err, scan.ErrReadFailed):
+		return fmt.Sprintf("cannot read: %q", path)
+	default:
+		return err.Error()
+	}
+}
+
 func ExitCodeFor(err error) int {
 	switch {
 	case err == nil:
