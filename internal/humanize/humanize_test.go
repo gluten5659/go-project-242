@@ -30,7 +30,7 @@ func TestFormat(t *testing.T) {
 	}
 }
 
-func TestPickUnit(t *testing.T) {
+func TestScaleToUnit(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		desc      string
@@ -47,9 +47,9 @@ func TestPickUnit(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
-			gotValue, gotUnit := pickUnit(tC.byteCount)
+			gotValue, gotUnit := scaleToUnit(tC.byteCount)
 			if gotValue != tC.wantValue || gotUnit != tC.wantUnit {
-				t.Errorf("pickUnit(%d) = (%v, %q), want (%v, %q)",
+				t.Errorf("scaleToUnit(%d) = (%v, %q), want (%v, %q)",
 					tC.byteCount, gotValue, gotUnit,
 					tC.wantValue, tC.wantUnit)
 			}

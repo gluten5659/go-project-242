@@ -50,17 +50,22 @@ func measureFolder(folderPath string, includeHidden bool, recursive bool) (int64
 	}
 	var folderSize int64
 	for _, file := range files {
-		if !includeHidden && strings.HasPrefix(file.Name(), ".") {
+		if !includeHidden && isHiddenName(file.Name()) {
 			continue
 		}
 		if !recursive && file.IsDir() {
 			continue
 		}
-		size, err := Measure(filepath.Join(folderPath, file.Name()), includeHidden, recursive)
+		childPath := filepath.Join(folderPath, file.Name())
+		size, err := Measure(childPath, includeHidden, recursive)
 		if err != nil {
 			return 0, err
 		}
 		folderSize += size
 	}
 	return folderSize, nil
+}
+
+func isHiddenName(name string) bool {
+	return strings.HasPrefix(name, ".")
 }

@@ -2,7 +2,9 @@ package humanize
 
 import "fmt"
 
-var sizes = []string{
+const unitBase = 1024
+
+var unitSuffixes = []string{
 	"B",
 	"KB",
 	"MB",
@@ -13,21 +15,22 @@ var sizes = []string{
 }
 
 func Format(byteCount int64, formatNeeded bool) string {
-	floatSize, prefix := pickUnit(byteCount)
-	if !formatNeeded || prefix == "B" {
+	if !formatNeeded || byteCount < unitBase {
 		return fmt.Sprintf("%dB", byteCount)
 	}
-	return fmt.Sprintf("%.1f%s", floatSize, prefix)
+	value, suffix := scaleToUnit(byteCount)
+	return fmt.Sprintf("%.1f%s", value, suffix)
 }
 
-func pickUnit(byteCount int64) (float64, string) {
-	floatBytesCount := float64(byteCount)
-	prefixIndex := 0
-	for floatBytesCount >= 1024 {
-		prefixIndex++
-		floatBytesCount /= 1024
+func scaleToUnit(byteCount int64) (float64, string) {
+	value := float64(byteCount)
+	for _, suffix := range unitSuffixes {
+		if value < unitBase {
+			return value, suffix
+		}
+		value /= unitBase
 	}
-	return floatBytesCount, sizes[prefixIndex]
+	return value, unitSuffixes[len(unitSuffixes)-1]
 }
 
 func FormatLine(output, path string) string {
