@@ -41,12 +41,12 @@ func ExitCodeFor(err error) int {
 
 func RunCli(args []string) (string, string, error) {
 	var (
-		formatNeeded bool
-		listHidden   bool
-		recursive    bool
-		result       string
-		path         string
-		err          error
+		formatNeeded  bool
+		includeHidden bool
+		recursive     bool
+		result        string
+		path          string
+		err           error
 	)
 
 	cmd := &cli.Command{
@@ -64,7 +64,7 @@ func RunCli(args []string) (string, string, error) {
 				Name:        "all",
 				Usage:       "Allow hidden files",
 				Aliases:     []string{"a"},
-				Destination: &listHidden,
+				Destination: &includeHidden,
 			},
 			&cli.BoolFlag{
 				Name:        "recursive",
@@ -78,7 +78,7 @@ func RunCli(args []string) (string, string, error) {
 				return fmt.Errorf("%w: exactly one file path is required", ErrUsage)
 			}
 			path = cmd.Args().Get(0)
-			result, err = code.GetPathSize(path, recursive, formatNeeded, listHidden)
+			result, err = code.GetPathSize(path, recursive, formatNeeded, includeHidden)
 			return err
 		},
 	}

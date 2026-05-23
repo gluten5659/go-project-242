@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestSize(t *testing.T) {
+func TestMeasure(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		desc      string
@@ -29,12 +29,12 @@ func TestSize(t *testing.T) {
 			want:  0,
 		},
 		{
-			desc:  "hidden file passed directly is counted even when listHidden is false",
+			desc:  "hidden file passed directly is counted even when includeHidden is false",
 			setup: tempFile(".secret.txt", "shh"),
 			want:  3,
 		},
 		{
-			desc: "directory delegates to getFolderSize",
+			desc: "directory delegates to measureFolder",
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
@@ -84,30 +84,30 @@ func TestSize(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			path := tC.setup(t)
-			got, err := Size(path, false, false)
+			got, err := Measure(path, false, false)
 			if (err != nil) != tC.wantErr {
-				t.Fatalf("Size error = %v, wantErr %v", err, tC.wantErr)
+				t.Fatalf("Measure error = %v, wantErr %v", err, tC.wantErr)
 			}
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
-				t.Errorf("Size error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
+				t.Errorf("Measure error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
 			if got != tC.want {
-				t.Errorf("Size = %d, want %d", got, tC.want)
+				t.Errorf("Measure = %d, want %d", got, tC.want)
 			}
 		})
 	}
 }
 
-func TestSizeFolder(t *testing.T) {
+func TestMeasureFolder(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		desc       string
-		setup      func(t *testing.T) string
-		listHidden bool
-		recursive  bool
-		want       int64
-		wantErr    bool
-		wantErrIs  error
+		desc          string
+		setup         func(t *testing.T) string
+		includeHidden bool
+		recursive     bool
+		want          int64
+		wantErr       bool
+		wantErrIs     error
 	}{
 		{
 			desc: "empty folder",
@@ -147,11 +147,11 @@ func TestSizeFolder(t *testing.T) {
 				writeTestFile(t, directory, ".hidden.txt", "xx")
 				return directory
 			},
-			listHidden: false,
-			want:       5,
+			includeHidden: false,
+			want:          5,
 		},
 		{
-			desc: "hidden file included when listHidden is true",
+			desc: "hidden file included when includeHidden is true",
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
@@ -159,8 +159,8 @@ func TestSizeFolder(t *testing.T) {
 				writeTestFile(t, directory, ".hidden.txt", "xx")
 				return directory
 			},
-			listHidden: true,
-			want:       7,
+			includeHidden: true,
+			want:          7,
 		},
 		{
 			desc:      "non-recursive skips nested folder",
@@ -220,15 +220,15 @@ func TestSizeFolder(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 			folderPath := tC.setup(t)
-			got, err := Size(folderPath, tC.listHidden, tC.recursive)
+			got, err := Measure(folderPath, tC.includeHidden, tC.recursive)
 			if (err != nil) != tC.wantErr {
-				t.Fatalf("Size error = %v, wantErr %v", err, tC.wantErr)
+				t.Fatalf("Measure error = %v, wantErr %v", err, tC.wantErr)
 			}
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
-				t.Errorf("Size error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
+				t.Errorf("Measure error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
 			if got != tC.want {
-				t.Errorf("Size = %d, want %d", got, tC.want)
+				t.Errorf("Measure = %d, want %d", got, tC.want)
 			}
 		})
 	}

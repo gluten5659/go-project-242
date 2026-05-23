@@ -30,6 +30,6 @@ func pickUnit(byteCount int64) (float64, string) {
 	return floatBytesCount, sizes[prefixIndex]
 }
 
-func Line(output, path string) string {
+func FormatLine(output, path string) string {
 	return fmt.Sprintf("%s\t%s", output, path)
 }

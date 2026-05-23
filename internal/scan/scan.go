@@ -27,7 +27,7 @@ func wrapFSError(err error, path string) error {
 	}
 }
 
-func Size(path string, listHidden, recursive bool) (int64, error) {
+func Measure(path string, includeHidden, recursive bool) (int64, error) {
 	stat, err := os.Lstat(path)
 	if err != nil {
 		return 0, wrapFSError(err, path)
@@ -35,7 +35,7 @@ func Size(path string, listHidden, recursive bool) (int64, error) {
 	mode := stat.Mode()
 	switch {
 	case mode.IsDir():
-		return getFolderSize(path, listHidden, recursive)
+		return measureFolder(path, includeHidden, recursive)
 	case mode.IsRegular(), mode&os.ModeSymlink != 0:
 		return stat.Size(), nil
 	default:
@@ -43,20 +43,20 @@ func Size(path string, listHidden, recursive bool) (int64, error) {
 	}
 }
 
-func getFolderSize(folderPath string, listHidden bool, recursive bool) (int64, error) {
+func measureFolder(folderPath string, includeHidden bool, recursive bool) (int64, error) {
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
 		return 0, wrapFSError(err, folderPath)
 	}
 	var folderSize int64
 	for _, file := range files {
-		if !listHidden && strings.HasPrefix(file.Name(), ".") {
+		if !includeHidden && strings.HasPrefix(file.Name(), ".") {
 			continue
 		}
 		if !recursive && file.IsDir() {
 			continue
 		}
-		size, err := Size(filepath.Join(folderPath, file.Name()), listHidden, recursive)
+		size, err := Measure(filepath.Join(folderPath, file.Name()), includeHidden, recursive)
 		if err != nil {
 			return 0, err
 		}

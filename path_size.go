@@ -6,7 +6,7 @@ import (
 )
 
 func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool) (string, error) {
-	size, err := scan.Size(path, listHidden, recursive)
+	size, err := scan.Measure(path, listHidden, recursive)
 	if err != nil {
 		return "", err
 	}

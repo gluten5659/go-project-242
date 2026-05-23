@@ -57,7 +57,7 @@ func TestPickUnit(t *testing.T) {
 	}
 }
 
-func TestLine(t *testing.T) {
+func TestFormatLine(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		desc   string
@@ -72,9 +72,9 @@ func TestLine(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
-			got := Line(tC.output, tC.path)
+			got := FormatLine(tC.output, tC.path)
 			if got != tC.want {
-				t.Errorf("Line(%q, %q) = %q, want %q",
+				t.Errorf("FormatLine(%q, %q) = %q, want %q",
 					tC.output, tC.path, got, tC.want)
 			}
 		})
