@@ -1,4 +1,4 @@
-package main
+package cliapp
 
 import (
 	"errors"
@@ -93,21 +93,21 @@ func TestRunCli(t *testing.T) {
 			args := append([]string{"hexlet-path-size"}, tC.flags...)
 			args = append(args, path)
 
-			output, gotPath, err := runCli(args)
+			output, gotPath, err := RunCli(args)
 			if (err != nil) != tC.wantErr {
-				t.Fatalf("runCli error = %v, wantErr %v", err, tC.wantErr)
+				t.Fatalf("RunCli error = %v, wantErr %v", err, tC.wantErr)
 			}
 			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
-				t.Errorf("runCli error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
+				t.Errorf("RunCli error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
 			}
 			if tC.wantErr {
 				return
 			}
 			if output != tC.wantOutput {
-				t.Errorf("runCli output = %q, want %q", output, tC.wantOutput)
+				t.Errorf("RunCli output = %q, want %q", output, tC.wantOutput)
 			}
 			if gotPath != path {
-				t.Errorf("runCli path = %q, want %q", gotPath, path)
+				t.Errorf("RunCli path = %q, want %q", gotPath, path)
 			}
 		})
 	}
@@ -131,9 +131,9 @@ func TestRunCliArgs(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
-			_, _, err := runCli(tC.args)
+			_, _, err := RunCli(tC.args)
 			if !errors.Is(err, ErrUsage) {
-				t.Fatalf("runCli error = %v, want errors.Is(_, ErrUsage)", err)
+				t.Fatalf("RunCli error = %v, want errors.Is(_, ErrUsage)", err)
 			}
 		})
 	}
@@ -146,19 +146,19 @@ func TestExitCodeFor(t *testing.T) {
 		err  error
 		want int
 	}{
-		{"no error", nil, exitOK},
-		{"usage error", ErrUsage, exitUsage},
-		{"path not found", scan.ErrPathNotFound, exitNoInput},
-		{"permission denied", scan.ErrPermissionDenied, exitPermission},
-		{"unsupported path", scan.ErrUnsupportedPath, exitDataErr},
-		{"unknown error", errors.New("boom"), exitGeneric},
+		{"no error", nil, ExitOK},
+		{"usage error", ErrUsage, ExitUsage},
+		{"path not found", scan.ErrPathNotFound, ExitNoInput},
+		{"permission denied", scan.ErrPermissionDenied, ExitPermission},
+		{"unsupported path", scan.ErrUnsupportedPath, ExitDataErr},
+		{"unknown error", errors.New("boom"), ExitGeneric},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
-			got := exitCodeFor(tC.err)
+			got := ExitCodeFor(tC.err)
 			if got != tC.want {
-				t.Errorf("exitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
+				t.Errorf("ExitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
 			}
 		})
 	}
