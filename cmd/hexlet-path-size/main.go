@@ -9,11 +9,18 @@ import (
 )
 
 func main() {
-	output, path, err := cliapp.RunCli(os.Args)
+	os.Exit(run(os.Args))
+}
+
+func run(args []string) int {
+	output, path, err := cliapp.RunCli(args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, cliapp.UserMessage(err, path))
-		os.Exit(cliapp.ExitCodeFor(err))
+
+		return cliapp.ExitCodeFor(err)
 	}
 
 	fmt.Println(humanize.FormatLine(output, path))
+
+	return cliapp.ExitOK
 }

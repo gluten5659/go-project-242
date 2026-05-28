@@ -1,0 +1,16 @@
+hexlet-path-size dir
+cmp stdout default.out
+! stderr .
+
+hexlet-path-size -a dir
+cmp stdout all.out
+! stderr .
+
+-- dir/visible.txt --
+hello
+-- dir/.hidden.txt --
+xx
+-- default.out --
+6B	dir
+-- all.out --
+9B	dir

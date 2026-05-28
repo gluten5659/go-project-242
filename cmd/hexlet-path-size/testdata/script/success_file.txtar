@@ -1,0 +1,8 @@
+hexlet-path-size file.txt
+cmp stdout expected.out
+! stderr .
+
+-- file.txt --
+hello
+-- expected.out --
+6B	file.txt

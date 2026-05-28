@@ -1,0 +1,4 @@
+! hexlet-path-size
+! stdout .
+stderr '^usage error:'
+! stderr 'Incorrect Usage'

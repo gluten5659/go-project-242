@@ -1,0 +1,9 @@
+[!exec:dd] skip 'dd not available in PATH'
+
+exec dd if=/dev/zero of=big.bin bs=1024 count=1 status=none
+hexlet-path-size -H big.bin
+cmp stdout expected.out
+! stderr .
+
+-- expected.out --
+1.0KB	big.bin

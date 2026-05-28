@@ -1,0 +1,16 @@
+hexlet-path-size dir
+cmp stdout shallow.out
+! stderr .
+
+hexlet-path-size -r dir
+cmp stdout deep.out
+! stderr .
+
+-- dir/top.txt --
+hello
+-- dir/sub/nested.txt --
+world!
+-- shallow.out --
+6B	dir
+-- deep.out --
+13B	dir

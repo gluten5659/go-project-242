@@ -1,0 +1,7 @@
+hexlet-path-size --help
+stdout 'hexlet-path-size'
+stdout 'print size of a file or directory'
+stdout '--human'
+stdout '--recursive'
+stdout '--all'
+! stderr .

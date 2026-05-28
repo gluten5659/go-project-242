@@ -1,0 +1,9 @@
+! hexlet-path-size a.txt b.txt
+! stdout .
+stderr '^usage error:'
+! stderr 'Incorrect Usage'
+
+-- a.txt --
+hi
+-- b.txt --
+hi

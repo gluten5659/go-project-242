@@ -72,6 +72,9 @@ func RunCli(args []string) (string, string, error) {
 		Name:      "hexlet-path-size",
 		Usage:     "print size of a file or directory",
 		ArgsUsage: "<path>",
+		OnUsageError: func(_ context.Context, _ *cli.Command, usageErr error, _ bool) error {
+			return fmt.Errorf("%w: %s", ErrUsage, usageErr.Error())
+		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:        "human",
