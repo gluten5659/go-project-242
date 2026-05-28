@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"code/internal/cliapp"
-	"code/internal/humanize"
 )
 
 func main() {
@@ -13,14 +12,14 @@ func main() {
 }
 
 func run(args []string) int {
-	output, path, err := cliapp.RunCli(args)
+	line, err := cliapp.RunCli(args)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, cliapp.UserMessage(err, path))
+		fmt.Fprintln(os.Stderr, err)
 
 		return cliapp.ExitCodeFor(err)
 	}
 
-	fmt.Println(humanize.FormatLine(output, path))
+	fmt.Println(line)
 
 	return cliapp.ExitOK
 }

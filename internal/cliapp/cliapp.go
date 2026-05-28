@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"code"
+	"code/internal/humanize"
 	"code/internal/scan"
 
 	"github.com/urfave/cli/v3"
@@ -21,25 +22,6 @@ const (
 	ExitNoInput    = 66
 	ExitPermission = 77
 )
-
-func UserMessage(err error, path string) string {
-	switch {
-	case err == nil:
-		return ""
-	case errors.Is(err, ErrUsage):
-		return err.Error()
-	case errors.Is(err, scan.ErrPathNotFound):
-		return fmt.Sprintf("path not found: %q", path)
-	case errors.Is(err, scan.ErrPermissionDenied):
-		return fmt.Sprintf("permission denied: %q", path)
-	case errors.Is(err, scan.ErrUnsupportedPath):
-		return fmt.Sprintf("unsupported file type: %q", path)
-	case errors.Is(err, scan.ErrReadFailed):
-		return fmt.Sprintf("cannot read: %q", path)
-	default:
-		return err.Error()
-	}
-}
 
 func ExitCodeFor(err error) int {
 	switch {
@@ -58,14 +40,12 @@ func ExitCodeFor(err error) int {
 	}
 }
 
-func RunCli(args []string) (string, string, error) {
+func RunCli(args []string) (string, error) {
 	var (
 		formatNeeded  bool
 		includeHidden bool
 		recursive     bool
-		result        string
-		path          string
-		err           error
+		line          string
 	)
 
 	cmd := &cli.Command{
@@ -95,18 +75,27 @@ func RunCli(args []string) (string, string, error) {
 				Destination: &recursive,
 			},
 		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(_ context.Context, cmd *cli.Command) error {
 			if cmd.Args().Len() != 1 {
 				return fmt.Errorf("%w: exactly one file path is required", ErrUsage)
 			}
 
-			path = cmd.Args().Get(0)
-			result, err = code.GetPathSize(path, recursive, formatNeeded, includeHidden)
+			path := cmd.Args().Get(0)
 
-			return err
+			size, err := code.GetPathSize(path, recursive, formatNeeded, includeHidden)
+			if err != nil {
+				return err
+			}
+
+			line = humanize.FormatLine(size, path)
+
+			return nil
 		},
 	}
-	err = cmd.Run(context.Background(), args)
 
-	return result, path, err
+	if err := cmd.Run(context.Background(), args); err != nil {
+		return "", err
+	}
+
+	return line, nil
 }

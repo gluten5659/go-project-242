@@ -1,0 +1,5 @@
+[windows] skip 'POSIX character devices like /dev/null are unix-only'
+
+! hexlet-path-size /dev/null
+! stdout .
+stderr '^unsupported path type:'

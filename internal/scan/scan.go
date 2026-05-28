@@ -19,11 +19,11 @@ var (
 func wrapFSError(err error, path string) error {
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return fmt.Errorf("%w: %q: %w", ErrPathNotFound, path, err)
+		return fmt.Errorf("%w: %q", ErrPathNotFound, path)
 	case errors.Is(err, fs.ErrPermission):
-		return fmt.Errorf("%w: %q: %w", ErrPermissionDenied, path, err)
+		return fmt.Errorf("%w: %q", ErrPermissionDenied, path)
 	default:
-		return fmt.Errorf("%w: %q: %w", ErrReadFailed, path, err)
+		return fmt.Errorf("%w: %q", ErrReadFailed, path)
 	}
 }
 

@@ -15,23 +15,23 @@ func TestRunCli(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		desc       string
-		setup      func(t *testing.T) string
-		flags      []string
-		wantOutput string
-		wantErrIs  error
-		wantErr    bool
+		desc      string
+		setup     func(t *testing.T) string
+		flags     []string
+		wantSize  string
+		wantErrIs error
+		wantErr   bool
 	}{
 		{
-			desc:       "regular file raw bytes",
-			setup:      tempFile("a.txt", "hello"),
-			wantOutput: "5B",
+			desc:     "regular file raw bytes",
+			setup:    tempFile("a.txt", "hello"),
+			wantSize: "5B",
 		},
 		{
-			desc:       "human-readable format with -H",
-			setup:      tempFile("big.dat", strings.Repeat("\x00", 1024*3/2)),
-			flags:      []string{"-H"},
-			wantOutput: "1.5KB",
+			desc:     "human-readable format with -H",
+			setup:    tempFile("big.dat", strings.Repeat("\x00", 1024*3/2)),
+			flags:    []string{"-H"},
+			wantSize: "1.5KB",
 		},
 		{
 			desc: "directory non-recursive ignores nested files",
@@ -44,7 +44,7 @@ func TestRunCli(t *testing.T) {
 
 				return directory
 			},
-			wantOutput: "5B",
+			wantSize: "5B",
 		},
 		{
 			desc: "directory recursive sums nested files",
@@ -57,8 +57,8 @@ func TestRunCli(t *testing.T) {
 
 				return directory
 			},
-			flags:      []string{"-r"},
-			wantOutput: "11B",
+			flags:    []string{"-r"},
+			wantSize: "11B",
 		},
 		{
 			desc: "hidden files excluded by default",
@@ -70,7 +70,7 @@ func TestRunCli(t *testing.T) {
 
 				return directory
 			},
-			wantOutput: "5B",
+			wantSize: "5B",
 		},
 		{
 			desc: "hidden files included with -a",
@@ -82,8 +82,8 @@ func TestRunCli(t *testing.T) {
 
 				return directory
 			},
-			flags:      []string{"-a"},
-			wantOutput: "7B",
+			flags:    []string{"-a"},
+			wantSize: "7B",
 		},
 		{
 			desc:      "nonexistent path returns error",
@@ -99,7 +99,7 @@ func TestRunCli(t *testing.T) {
 			args := append([]string{"hexlet-path-size"}, tC.flags...)
 			args = append(args, path)
 
-			output, gotPath, err := RunCli(args)
+			line, err := RunCli(args)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("RunCli error = %v, wantErr %v", err, tC.wantErr)
 			}
@@ -112,12 +112,9 @@ func TestRunCli(t *testing.T) {
 				return
 			}
 
-			if output != tC.wantOutput {
-				t.Errorf("RunCli output = %q, want %q", output, tC.wantOutput)
-			}
-
-			if gotPath != path {
-				t.Errorf("RunCli path = %q, want %q", gotPath, path)
+			want := fmt.Sprintf("%s\t%s", tC.wantSize, path)
+			if line != want {
+				t.Errorf("RunCli line = %q, want %q", line, want)
 			}
 		})
 	}
@@ -131,80 +128,25 @@ func TestRunCliArgs(t *testing.T) {
 		args []string
 	}{
 		{
-			desc: "no path returns error",
+			desc: "no path returns ErrUsage",
 			args: []string{"hexlet-path-size"},
 		},
 		{
-			desc: "two paths returns error",
+			desc: "two paths returns ErrUsage",
 			args: []string{"hexlet-path-size", "/tmp/a", "/tmp/b"},
 		},
+		{
+			desc: "unknown flag returns ErrUsage",
+			args: []string{"hexlet-path-size", "--bogus", "/tmp/a"},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			_, _, err := RunCli(tC.args)
+			_, err := RunCli(tC.args)
 			if !errors.Is(err, ErrUsage) {
 				t.Fatalf("RunCli error = %v, want errors.Is(_, ErrUsage)", err)
-			}
-		})
-	}
-}
-
-func TestUserMessage(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		desc string
-		err  error
-		path string
-		want string
-	}{
-		{"no error", nil, "/x", ""},
-		{
-			desc: "usage error keeps its own message",
-			err:  fmt.Errorf("%w: exactly one file path is required", ErrUsage),
-			path: "",
-			want: "usage error: exactly one file path is required",
-		},
-		{
-			desc: "path not found",
-			err:  fmt.Errorf("%w: %q: underlying", scan.ErrPathNotFound, "/x"),
-			path: "/x",
-			want: `path not found: "/x"`,
-		},
-		{
-			desc: "permission denied",
-			err:  fmt.Errorf("%w: %q: underlying", scan.ErrPermissionDenied, "/x"),
-			path: "/x",
-			want: `permission denied: "/x"`,
-		},
-		{
-			desc: "unsupported file type",
-			err:  fmt.Errorf("%w: %q", scan.ErrUnsupportedPath, "/x"),
-			path: "/x",
-			want: `unsupported file type: "/x"`,
-		},
-		{
-			desc: "read failed",
-			err:  fmt.Errorf("%w: %q: underlying", scan.ErrReadFailed, "/x"),
-			path: "/x",
-			want: `cannot read: "/x"`,
-		},
-		{
-			desc: "unknown error falls back to its own message",
-			err:  errors.New("boom"),
-			path: "/x",
-			want: "boom",
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			t.Parallel()
-
-			got := UserMessage(tC.err, tC.path)
-			if got != tC.want {
-				t.Errorf("UserMessage(%v, %q) = %q, want %q", tC.err, tC.path, got, tC.want)
 			}
 		})
 	}
