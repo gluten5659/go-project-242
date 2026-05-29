@@ -2,12 +2,11 @@ package code
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"code/internal/scan"
 )
 
 func TestGetPathSize(t *testing.T) {
@@ -46,7 +45,7 @@ func TestGetPathSize(t *testing.T) {
 			desc:      "nonexistent path returns error",
 			setup:     staticPath("/no/such/path"),
 			wantErr:   true,
-			wantErrIs: scan.ErrPathNotFound,
+			wantErrIs: fs.ErrNotExist,
 		},
 		{
 			desc:         "hidden file path is shown despite listHidden being false",

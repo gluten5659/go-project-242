@@ -1,36 +1,19 @@
-package scan
+package dirsize
 
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-var (
-	ErrPathNotFound     = errors.New("path not found")
-	ErrPermissionDenied = errors.New("permission denied")
-	ErrUnsupportedPath  = errors.New("unsupported path type")
-	ErrReadFailed       = errors.New("read failed")
-)
-
-func wrapFSError(err error, path string) error {
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-		return fmt.Errorf("%w: %q", ErrPathNotFound, path)
-	case errors.Is(err, fs.ErrPermission):
-		return fmt.Errorf("%w: %q", ErrPermissionDenied, path)
-	default:
-		return fmt.Errorf("%w: %q", ErrReadFailed, path)
-	}
-}
+var ErrUnsupportedPath = errors.New("unsupported path type")
 
 func Measure(path string, includeHidden, recursive bool) (int64, error) {
 	stat, err := os.Lstat(path)
 	if err != nil {
-		return 0, wrapFSError(err, path)
+		return 0, err
 	}
 
 	mode := stat.Mode()
@@ -47,7 +30,7 @@ func Measure(path string, includeHidden, recursive bool) (int64, error) {
 func measureFolder(folderPath string, includeHidden bool, recursive bool) (int64, error) {
 	entries, err := os.ReadDir(folderPath)
 	if err != nil {
-		return 0, wrapFSError(err, folderPath)
+		return 0, err
 	}
 
 	var folderSize int64

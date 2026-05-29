@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"code"
-	"code/internal/humanize"
-	"code/internal/scan"
+	"code/internal/dirsize"
+	"code/internal/output"
 
 	"github.com/urfave/cli/v3"
 )
@@ -65,25 +66,34 @@ func NewCommand() *cli.Command {
 
 			size, err := code.GetPathSize(path, recursive, formatNeeded, includeHidden)
 			if err != nil {
-				return cli.Exit(err, exitCodeFor(err))
+				return userError(err)
 			}
 
-			_, _ = fmt.Fprintln(cmd.Root().Writer, humanize.FormatLine(size, path))
+			_, _ = fmt.Fprintln(cmd.Root().Writer, output.FormatLine(size, path))
 
 			return nil
 		},
 	}
 }
 
-func exitCodeFor(err error) int {
+func userError(err error) error {
 	switch {
-	case errors.Is(err, scan.ErrPathNotFound):
-		return exitNoInput
-	case errors.Is(err, scan.ErrPermissionDenied):
-		return exitPermission
-	case errors.Is(err, scan.ErrUnsupportedPath):
-		return exitDataErr
+	case errors.Is(err, fs.ErrNotExist):
+		return cli.Exit(pathMessage("path not found", err), exitNoInput)
+	case errors.Is(err, fs.ErrPermission):
+		return cli.Exit(pathMessage("permission denied", err), exitPermission)
+	case errors.Is(err, dirsize.ErrUnsupportedPath):
+		return cli.Exit(err, exitDataErr)
 	default:
-		return exitGeneric
+		return cli.Exit(err, exitGeneric)
 	}
+}
+
+func pathMessage(label string, err error) string {
+	var pathErr *fs.PathError
+	if errors.As(err, &pathErr) {
+		return fmt.Sprintf("%s: %q", label, pathErr.Path)
+	}
+
+	return fmt.Sprintf("%s: %s", label, err)
 }

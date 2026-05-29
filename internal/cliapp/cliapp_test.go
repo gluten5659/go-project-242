@@ -5,12 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"code/internal/scan"
+	"code/internal/dirsize"
 
 	"github.com/urfave/cli/v3"
 )
@@ -158,26 +159,51 @@ func TestCommandReportsExitCodeForMissingPath(t *testing.T) {
 	}
 }
 
-func TestExitCodeFor(t *testing.T) {
+func TestUserError(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		desc string
-		err  error
-		want int
+		desc     string
+		err      error
+		wantCode int
+		wantMsg  string
 	}{
-		{"path not found", scan.ErrPathNotFound, exitNoInput},
-		{"permission denied", scan.ErrPermissionDenied, exitPermission},
-		{"unsupported path", scan.ErrUnsupportedPath, exitDataErr},
-		{"read failure falls back to generic", scan.ErrReadFailed, exitGeneric},
-		{"unknown error falls back to generic", errors.New("boom"), exitGeneric},
+		{
+			desc:     "missing path maps to no-input",
+			err:      &fs.PathError{Op: "lstat", Path: "/x", Err: fs.ErrNotExist},
+			wantCode: exitNoInput,
+			wantMsg:  `path not found: "/x"`,
+		},
+		{
+			desc:     "permission denied maps to permission code",
+			err:      &fs.PathError{Op: "open", Path: "/x", Err: fs.ErrPermission},
+			wantCode: exitPermission,
+			wantMsg:  `permission denied: "/x"`,
+		},
+		{
+			desc:     "unsupported path maps to data error",
+			err:      fmt.Errorf("%w: %q", dirsize.ErrUnsupportedPath, "/x"),
+			wantCode: exitDataErr,
+			wantMsg:  `unsupported path type: "/x"`,
+		},
+		{
+			desc:     "unknown error falls back to generic",
+			err:      errors.New("boom"),
+			wantCode: exitGeneric,
+			wantMsg:  "boom",
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if got := exitCodeFor(tC.err); got != tC.want {
-				t.Errorf("exitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
+			got := userError(tC.err)
+			if code := exitCodeOf(t, got); code != tC.wantCode {
+				t.Errorf("exit code = %d, want %d", code, tC.wantCode)
+			}
+
+			if got.Error() != tC.wantMsg {
+				t.Errorf("message = %q, want %q", got.Error(), tC.wantMsg)
 			}
 		})
 	}

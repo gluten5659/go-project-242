@@ -1,4 +1,4 @@
-package humanize
+package output
 
 import "fmt"
 
@@ -14,7 +14,7 @@ var unitSuffixes = []string{
 	"EB",
 }
 
-func Format(byteCount int64, formatNeeded bool) string {
+func FormatSize(byteCount int64, formatNeeded bool) string {
 	if !formatNeeded || byteCount < unitBase {
 		return fmt.Sprintf("%dB", byteCount)
 	}
@@ -37,6 +37,6 @@ func scaleToUnit(byteCount int64) (float64, string) {
 	return value, unitSuffixes[len(unitSuffixes)-1]
 }
 
-func FormatLine(output, path string) string {
-	return fmt.Sprintf("%s\t%s", output, path)
+func FormatLine(size, path string) string {
+	return fmt.Sprintf("%s\t%s", size, path)
 }

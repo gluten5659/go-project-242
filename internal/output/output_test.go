@@ -1,8 +1,8 @@
-package humanize
+package output
 
 import "testing"
 
-func TestFormat(t *testing.T) {
+func TestFormatSize(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -23,9 +23,9 @@ func TestFormat(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			got := Format(tC.byteCount, tC.formatNeeded)
+			got := FormatSize(tC.byteCount, tC.formatNeeded)
 			if got != tC.want {
-				t.Errorf("Format(%d, %v) = %q, want %q",
+				t.Errorf("FormatSize(%d, %v) = %q, want %q",
 					tC.byteCount, tC.formatNeeded, got, tC.want)
 			}
 		})
@@ -65,10 +65,10 @@ func TestFormatLine(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		desc   string
-		output string
-		path   string
-		want   string
+		desc string
+		size string
+		path string
+		want string
 	}{
 		{"size and path joined by tab", "5B", "/tmp/a.txt", "5B\t/tmp/a.txt"},
 		{"human-readable size", "1.5KB", "/var/big.dat", "1.5KB\t/var/big.dat"},
@@ -78,10 +78,10 @@ func TestFormatLine(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			got := FormatLine(tC.output, tC.path)
+			got := FormatLine(tC.size, tC.path)
 			if got != tC.want {
 				t.Errorf("FormatLine(%q, %q) = %q, want %q",
-					tC.output, tC.path, got, tC.want)
+					tC.size, tC.path, got, tC.want)
 			}
 		})
 	}
