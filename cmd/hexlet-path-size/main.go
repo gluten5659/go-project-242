@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -8,18 +9,8 @@ import (
 )
 
 func main() {
-	os.Exit(run(os.Args))
-}
-
-func run(args []string) int {
-	line, err := cliapp.RunCli(args)
-	if err != nil {
+	if err := cliapp.NewCommand().Run(context.Background(), os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-
-		return cliapp.ExitCodeFor(err)
+		os.Exit(1)
 	}
-
-	fmt.Println(line)
-
-	return cliapp.ExitOK
 }

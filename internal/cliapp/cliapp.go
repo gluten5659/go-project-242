@@ -12,48 +12,29 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var ErrUsage = errors.New("usage error")
+var errUsage = errors.New("usage error")
 
 const (
-	ExitOK         = 0
-	ExitGeneric    = 1
-	ExitUsage      = 64
-	ExitDataErr    = 65
-	ExitNoInput    = 66
-	ExitPermission = 77
+	exitGeneric    = 1
+	exitUsage      = 64
+	exitDataErr    = 65
+	exitNoInput    = 66
+	exitPermission = 77
 )
 
-func ExitCodeFor(err error) int {
-	switch {
-	case err == nil:
-		return ExitOK
-	case errors.Is(err, ErrUsage):
-		return ExitUsage
-	case errors.Is(err, scan.ErrPathNotFound):
-		return ExitNoInput
-	case errors.Is(err, scan.ErrPermissionDenied):
-		return ExitPermission
-	case errors.Is(err, scan.ErrUnsupportedPath):
-		return ExitDataErr
-	default:
-		return ExitGeneric
-	}
-}
-
-func RunCli(args []string) (string, error) {
+func NewCommand() *cli.Command {
 	var (
 		formatNeeded  bool
 		includeHidden bool
 		recursive     bool
-		line          string
 	)
 
-	cmd := &cli.Command{
+	return &cli.Command{
 		Name:      "hexlet-path-size",
 		Usage:     "print size of a file or directory",
 		ArgsUsage: "<path>",
 		OnUsageError: func(_ context.Context, _ *cli.Command, usageErr error, _ bool) error {
-			return fmt.Errorf("%w: %s", ErrUsage, usageErr.Error())
+			return cli.Exit(fmt.Errorf("%w: %s", errUsage, usageErr.Error()), exitUsage)
 		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -77,25 +58,32 @@ func RunCli(args []string) (string, error) {
 		},
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			if cmd.Args().Len() != 1 {
-				return fmt.Errorf("%w: exactly one file path is required", ErrUsage)
+				return cli.Exit(fmt.Errorf("%w: exactly one file path is required", errUsage), exitUsage)
 			}
 
 			path := cmd.Args().Get(0)
 
 			size, err := code.GetPathSize(path, recursive, formatNeeded, includeHidden)
 			if err != nil {
-				return err
+				return cli.Exit(err, exitCodeFor(err))
 			}
 
-			line = humanize.FormatLine(size, path)
+			_, _ = fmt.Fprintln(cmd.Root().Writer, humanize.FormatLine(size, path))
 
 			return nil
 		},
 	}
+}
 
-	if err := cmd.Run(context.Background(), args); err != nil {
-		return "", err
+func exitCodeFor(err error) int {
+	switch {
+	case errors.Is(err, scan.ErrPathNotFound):
+		return exitNoInput
+	case errors.Is(err, scan.ErrPermissionDenied):
+		return exitPermission
+	case errors.Is(err, scan.ErrUnsupportedPath):
+		return exitDataErr
+	default:
+		return exitGeneric
 	}
-
-	return line, nil
 }

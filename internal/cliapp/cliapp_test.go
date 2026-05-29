@@ -1,6 +1,8 @@
 package cliapp
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -9,18 +11,18 @@ import (
 	"testing"
 
 	"code/internal/scan"
+
+	"github.com/urfave/cli/v3"
 )
 
-func TestRunCli(t *testing.T) {
+func TestCommandOutput(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		desc      string
-		setup     func(t *testing.T) string
-		flags     []string
-		wantSize  string
-		wantErrIs error
-		wantErr   bool
+		desc     string
+		setup    func(t *testing.T) string
+		flags    []string
+		wantSize string
 	}{
 		{
 			desc:     "regular file raw bytes",
@@ -85,42 +87,28 @@ func TestRunCli(t *testing.T) {
 			flags:    []string{"-a"},
 			wantSize: "7B",
 		},
-		{
-			desc:      "nonexistent path returns error",
-			setup:     staticPath("/no/such/path"),
-			wantErr:   true,
-			wantErrIs: scan.ErrPathNotFound,
-		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
+
 			path := tC.setup(t)
-			args := append([]string{"hexlet-path-size"}, tC.flags...)
-			args = append(args, path)
+			args := append([]string{}, tC.flags...)
 
-			line, err := RunCli(args)
-			if (err != nil) != tC.wantErr {
-				t.Fatalf("RunCli error = %v, wantErr %v", err, tC.wantErr)
-			}
-
-			if tC.wantErrIs != nil && !errors.Is(err, tC.wantErrIs) {
-				t.Errorf("RunCli error = %v, want errors.Is(_, %v)", err, tC.wantErrIs)
-			}
-
-			if tC.wantErr {
-				return
+			line, err := runCLI(t, append(args, path)...)
+			if err != nil {
+				t.Fatalf("runCLI returned error: %v", err)
 			}
 
 			want := fmt.Sprintf("%s\t%s", tC.wantSize, path)
 			if line != want {
-				t.Errorf("RunCli line = %q, want %q", line, want)
+				t.Errorf("output = %q, want %q", line, want)
 			}
 		})
 	}
 }
 
-func TestRunCliArgs(t *testing.T) {
+func TestCommandUsageErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -128,27 +116,45 @@ func TestRunCliArgs(t *testing.T) {
 		args []string
 	}{
 		{
-			desc: "no path returns ErrUsage",
-			args: []string{"hexlet-path-size"},
+			desc: "no path",
+			args: []string{},
 		},
 		{
-			desc: "two paths returns ErrUsage",
-			args: []string{"hexlet-path-size", "/tmp/a", "/tmp/b"},
+			desc: "two paths",
+			args: []string{"/tmp/a", "/tmp/b"},
 		},
 		{
-			desc: "unknown flag returns ErrUsage",
-			args: []string{"hexlet-path-size", "--bogus", "/tmp/a"},
+			desc: "unknown flag",
+			args: []string{"--bogus", "/tmp/a"},
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := RunCli(tC.args)
-			if !errors.Is(err, ErrUsage) {
-				t.Fatalf("RunCli error = %v, want errors.Is(_, ErrUsage)", err)
+			_, err := runCLI(t, tC.args...)
+			if got := exitCodeOf(t, err); got != exitUsage {
+				t.Errorf("exit code = %d, want %d", got, exitUsage)
+			}
+
+			if !strings.HasPrefix(err.Error(), "usage error") {
+				t.Errorf("error %q does not start with %q", err.Error(), "usage error")
 			}
 		})
+	}
+}
+
+func TestCommandReportsExitCodeForMissingPath(t *testing.T) {
+	t.Parallel()
+
+	_, err := runCLI(t, "/no/such/path")
+
+	if got := exitCodeOf(t, err); got != exitNoInput {
+		t.Errorf("exit code = %d, want %d", got, exitNoInput)
+	}
+
+	if !strings.Contains(err.Error(), "path not found") {
+		t.Errorf("error %q does not mention %q", err.Error(), "path not found")
 	}
 }
 
@@ -160,23 +166,47 @@ func TestExitCodeFor(t *testing.T) {
 		err  error
 		want int
 	}{
-		{"no error", nil, ExitOK},
-		{"usage error", ErrUsage, ExitUsage},
-		{"path not found", scan.ErrPathNotFound, ExitNoInput},
-		{"permission denied", scan.ErrPermissionDenied, ExitPermission},
-		{"unsupported path", scan.ErrUnsupportedPath, ExitDataErr},
-		{"unknown error", errors.New("boom"), ExitGeneric},
+		{"path not found", scan.ErrPathNotFound, exitNoInput},
+		{"permission denied", scan.ErrPermissionDenied, exitPermission},
+		{"unsupported path", scan.ErrUnsupportedPath, exitDataErr},
+		{"read failure falls back to generic", scan.ErrReadFailed, exitGeneric},
+		{"unknown error falls back to generic", errors.New("boom"), exitGeneric},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			t.Parallel()
 
-			got := ExitCodeFor(tC.err)
-			if got != tC.want {
-				t.Errorf("ExitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
+			if got := exitCodeFor(tC.err); got != tC.want {
+				t.Errorf("exitCodeFor(%v) = %d, want %d", tC.err, got, tC.want)
 			}
 		})
 	}
+}
+
+func runCLI(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+
+	var stdout, stderr bytes.Buffer
+
+	cmd := NewCommand()
+	cmd.Writer = &stdout
+	cmd.ErrWriter = &stderr
+	cmd.ExitErrHandler = func(_ context.Context, _ *cli.Command, _ error) {}
+
+	err := cmd.Run(context.Background(), append([]string{"hexlet-path-size"}, args...))
+
+	return strings.TrimRight(stdout.String(), "\n"), err
+}
+
+func exitCodeOf(t *testing.T, err error) int {
+	t.Helper()
+
+	var coder cli.ExitCoder
+	if !errors.As(err, &coder) {
+		t.Fatalf("error %v does not implement cli.ExitCoder", err)
+	}
+
+	return coder.ExitCode()
 }
 
 func tempFile(name, content string) func(*testing.T) string {
@@ -185,10 +215,6 @@ func tempFile(name, content string) func(*testing.T) string {
 
 		return writeTestFile(t, t.TempDir(), name, content)
 	}
-}
-
-func staticPath(path string) func(*testing.T) string {
-	return func(*testing.T) string { return path }
 }
 
 func writeTestFile(t *testing.T, directory, name, content string) string {
