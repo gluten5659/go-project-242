@@ -1,7 +1,3 @@
-# Regression test: an unknown flag must be classified as a usage error
-# (exit code 64, message "usage error: ..."), not as a generic internal failure.
-# Also asserts urfave's default "Incorrect Usage" preamble is not printed,
-# so the user never sees a duplicated stderr line.
 ! hexlet-path-size --bogus file.txt
 ! stdout .
 stderr '^usage error:'

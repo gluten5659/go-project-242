@@ -1,5 +1,4 @@
 [windows] skip 'POSIX permission bits are not enforced on Windows'
-[root] skip 'root bypasses POSIX permission checks'
 
 chmod 0600 locked
 ! hexlet-path-size -r locked
