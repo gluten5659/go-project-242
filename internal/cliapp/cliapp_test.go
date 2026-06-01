@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"code/internal/dirsize"
@@ -145,17 +146,87 @@ func TestCommandUsageErrors(t *testing.T) {
 	}
 }
 
-func TestCommandReportsExitCodeForMissingPath(t *testing.T) {
+func TestCommandReportsExitCodesForErrors(t *testing.T) {
 	t.Parallel()
 
-	_, err := runCLI(t, "/no/such/path")
-
-	if got := exitCodeOf(t, err); got != exitNoInput {
-		t.Errorf("exit code = %d, want %d", got, exitNoInput)
+	testCases := []struct {
+		desc        string
+		setup       func(t *testing.T) string
+		wantCode    int
+		wantMessage string
+	}{
+		{
+			desc:        "missing path maps to no-input code",
+			setup:       staticPath("/no/such/path"),
+			wantCode:    exitNoInput,
+			wantMessage: "path not found",
+		},
+		{
+			desc:        "unsupported path type maps to data-error code",
+			setup:       fifoPath(),
+			wantCode:    exitDataErr,
+			wantMessage: "unsupported path type",
+		},
 	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
 
-	if !strings.Contains(err.Error(), "path not found") {
-		t.Errorf("error %q does not mention %q", err.Error(), "path not found")
+			_, err := runCLI(t, tC.setup(t))
+
+			if got := exitCodeOf(t, err); got != tC.wantCode {
+				t.Errorf("exit code = %d, want %d", got, tC.wantCode)
+			}
+
+			if !strings.Contains(err.Error(), tC.wantMessage) {
+				t.Errorf("error %q does not contain %q", err.Error(), tC.wantMessage)
+			}
+		})
+	}
+}
+
+func TestCommandReportsFailingChildPathNotRoot(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc       string
+		lockedPath string
+	}{
+		{
+			desc:       "direct child directory",
+			lockedPath: "locked",
+		},
+		{
+			desc:       "deeply nested directory",
+			lockedPath: filepath.Join("a", "b", "locked"),
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			root := t.TempDir()
+			lockedDir := makeSubDir(t, root, tC.lockedPath)
+			writeTestFile(t, lockedDir, "inside.txt", "secret")
+
+			if err := os.Chmod(lockedDir, 0o000); err != nil {
+				t.Fatal(err)
+			}
+
+			t.Cleanup(func() {
+				_ = os.Chmod(lockedDir, 0o700)
+			})
+
+			_, err := runCLI(t, "-r", root)
+
+			if got := exitCodeOf(t, err); got != exitPermission {
+				t.Errorf("exit code = %d, want %d", got, exitPermission)
+			}
+
+			if !strings.Contains(err.Error(), lockedDir) {
+				t.Errorf("error %q lost the failing child path %q and fell back to a shallower path", err.Error(), lockedDir)
+			}
+		})
 	}
 }
 
@@ -240,6 +311,23 @@ func tempFile(name, content string) func(*testing.T) string {
 		t.Helper()
 
 		return writeTestFile(t, t.TempDir(), name, content)
+	}
+}
+
+func staticPath(path string) func(*testing.T) string {
+	return func(*testing.T) string { return path }
+}
+
+func fifoPath() func(*testing.T) string {
+	return func(t *testing.T) string {
+		t.Helper()
+
+		path := filepath.Join(t.TempDir(), "pipe")
+		if err := syscall.Mkfifo(path, 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		return path
 	}
 }
 
