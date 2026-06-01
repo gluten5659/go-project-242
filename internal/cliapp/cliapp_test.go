@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"code/internal/dirsize"
+	"code/internal/testutil"
 
 	"github.com/urfave/cli/v3"
 )
@@ -28,12 +29,12 @@ func TestCommandOutput(t *testing.T) {
 	}{
 		{
 			desc:     "regular file raw bytes",
-			setup:    tempFile("a.txt", "hello"),
+			setup:    testutil.TempFile("a.txt", "hello"),
 			wantSize: "5B",
 		},
 		{
 			desc:     "human-readable format with -H",
-			setup:    tempFile("big.dat", strings.Repeat("\x00", 1024*3/2)),
+			setup:    testutil.TempFile("big.dat", strings.Repeat("\x00", 1024*3/2)),
 			flags:    []string{"-H"},
 			wantSize: "1.5KB",
 		},
@@ -42,9 +43,9 @@ func TestCommandOutput(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				writeTestFile(t, directory, "top.txt", "hello")
-				subDir := makeSubDir(t, directory, "sub")
-				writeTestFile(t, subDir, "nested.txt", "ignored")
+				testutil.WriteFile(t, directory, "top.txt", "hello")
+				subDir := testutil.MakeDirectory(t, directory, "sub")
+				testutil.WriteFile(t, subDir, "nested.txt", "ignored")
 
 				return directory
 			},
@@ -55,9 +56,9 @@ func TestCommandOutput(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				writeTestFile(t, directory, "top.txt", "hello")
-				subDir := makeSubDir(t, directory, "sub")
-				writeTestFile(t, subDir, "nested.txt", "world!")
+				testutil.WriteFile(t, directory, "top.txt", "hello")
+				subDir := testutil.MakeDirectory(t, directory, "sub")
+				testutil.WriteFile(t, subDir, "nested.txt", "world!")
 
 				return directory
 			},
@@ -69,8 +70,8 @@ func TestCommandOutput(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				writeTestFile(t, directory, "visible.txt", "hello")
-				writeTestFile(t, directory, ".hidden.txt", "xx")
+				testutil.WriteFile(t, directory, "visible.txt", "hello")
+				testutil.WriteFile(t, directory, ".hidden.txt", "xx")
 
 				return directory
 			},
@@ -81,8 +82,8 @@ func TestCommandOutput(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				writeTestFile(t, directory, "visible.txt", "hello")
-				writeTestFile(t, directory, ".hidden.txt", "xx")
+				testutil.WriteFile(t, directory, "visible.txt", "hello")
+				testutil.WriteFile(t, directory, ".hidden.txt", "xx")
 
 				return directory
 			},
@@ -157,7 +158,7 @@ func TestCommandReportsExitCodesForErrors(t *testing.T) {
 	}{
 		{
 			desc:        "missing path maps to no-input code",
-			setup:       staticPath("/no/such/path"),
+			setup:       testutil.StaticPath("/no/such/path"),
 			wantCode:    exitNoInput,
 			wantMessage: "path not found",
 		},
@@ -206,8 +207,8 @@ func TestCommandReportsFailingChildPathNotRoot(t *testing.T) {
 			t.Parallel()
 
 			root := t.TempDir()
-			lockedDir := makeSubDir(t, root, tC.lockedPath)
-			writeTestFile(t, lockedDir, "inside.txt", "secret")
+			lockedDir := testutil.MakeDirectory(t, root, tC.lockedPath)
+			testutil.WriteFile(t, lockedDir, "inside.txt", "secret")
 
 			if err := os.Chmod(lockedDir, 0o000); err != nil {
 				t.Fatal(err)
@@ -306,18 +307,6 @@ func exitCodeOf(t *testing.T, err error) int {
 	return coder.ExitCode()
 }
 
-func tempFile(name, content string) func(*testing.T) string {
-	return func(t *testing.T) string {
-		t.Helper()
-
-		return writeTestFile(t, t.TempDir(), name, content)
-	}
-}
-
-func staticPath(path string) func(*testing.T) string {
-	return func(*testing.T) string { return path }
-}
-
 func fifoPath() func(*testing.T) string {
 	return func(t *testing.T) string {
 		t.Helper()
@@ -329,26 +318,4 @@ func fifoPath() func(*testing.T) string {
 
 		return path
 	}
-}
-
-func writeTestFile(t *testing.T, directory, name, content string) string {
-	t.Helper()
-
-	path := filepath.Join(directory, name)
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	return path
-}
-
-func makeSubDir(t *testing.T, parent, name string) string {
-	t.Helper()
-
-	path := filepath.Join(parent, name)
-	if err := os.MkdirAll(path, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	return path
 }

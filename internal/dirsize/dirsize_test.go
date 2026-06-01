@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"syscall"
 	"testing"
+
+	"code/internal/testutil"
 )
 
 type measureCase struct {
@@ -54,12 +56,12 @@ func TestMeasureFile(t *testing.T) {
 	runMeasureCases(t, []measureCase{
 		{
 			desc:  "file with content",
-			setup: tempFile("data.txt", "hello"),
+			setup: testutil.TempFile("data.txt", "hello"),
 			want:  5,
 		},
 		{
 			desc:  "empty file",
-			setup: tempFile("empty.txt", ""),
+			setup: testutil.TempFile("empty.txt", ""),
 			want:  0,
 		},
 	})
@@ -83,7 +85,7 @@ func TestMeasureDirectory(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "hello")
+				testutil.WriteFile(t, directory, "a.txt", "hello")
 
 				return directory
 			},
@@ -94,8 +96,8 @@ func TestMeasureDirectory(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "hello")
-				writeTestFile(t, directory, "b.txt", "world!")
+				testutil.WriteFile(t, directory, "a.txt", "hello")
+				testutil.WriteFile(t, directory, "b.txt", "world!")
 
 				return directory
 			},
@@ -110,7 +112,7 @@ func TestMeasureHidden(t *testing.T) {
 	runMeasureCases(t, []measureCase{
 		{
 			desc:  "hidden file passed directly is always counted",
-			setup: tempFile(".secret.txt", "shh"),
+			setup: testutil.TempFile(".secret.txt", "shh"),
 			want:  3,
 		},
 		{
@@ -133,13 +135,13 @@ func TestMeasureRecursive(t *testing.T) {
 	runMeasureCases(t, []measureCase{
 		{
 			desc:      "nested folder skipped without recursive",
-			setup:     nestedTree("hello", "ignored"),
+			setup:     testutil.NestedTree("hello", "ignored"),
 			recursive: false,
 			want:      5,
 		},
 		{
 			desc:      "nested folder summed with recursive",
-			setup:     nestedTree("hello", "world!"),
+			setup:     testutil.NestedTree("hello", "world!"),
 			recursive: true,
 			want:      11,
 		},
@@ -172,7 +174,7 @@ func TestMeasureSymlink(t *testing.T) {
 				t.Helper()
 				skipWithoutSymlinks(t)
 				directory := t.TempDir()
-				writeTestFile(t, directory, "a.txt", "hello")
+				testutil.WriteFile(t, directory, "a.txt", "hello")
 
 				if err := os.Symlink("xy", filepath.Join(directory, "link")); err != nil {
 					t.Fatal(err)
@@ -191,7 +193,7 @@ func TestMeasureErrors(t *testing.T) {
 	runMeasureCases(t, []measureCase{
 		{
 			desc:      "nonexistent path",
-			setup:     staticPath("/definitely/not/exists/here"),
+			setup:     testutil.StaticPath("/definitely/not/exists/here"),
 			wantErrIs: fs.ErrNotExist,
 		},
 		{
@@ -214,8 +216,8 @@ func TestMeasureErrors(t *testing.T) {
 			setup: func(t *testing.T) string {
 				t.Helper()
 				directory := t.TempDir()
-				subDir := makeSubDir(t, directory, "locked")
-				writeTestFile(t, subDir, "inside.txt", "secret")
+				subDir := testutil.MakeDirectory(t, directory, "locked")
+				testutil.WriteFile(t, subDir, "inside.txt", "secret")
 
 				if err := os.Chmod(subDir, 0o600); err != nil {
 					t.Fatal(err)
@@ -233,39 +235,15 @@ func TestMeasureErrors(t *testing.T) {
 	})
 }
 
-func tempFile(name, content string) func(*testing.T) string {
-	return func(t *testing.T) string {
-		t.Helper()
-
-		return writeTestFile(t, t.TempDir(), name, content)
-	}
-}
-
 func hiddenTree() func(*testing.T) string {
 	return func(t *testing.T) string {
 		t.Helper()
 		directory := t.TempDir()
-		writeTestFile(t, directory, "visible.txt", "hello")
-		writeTestFile(t, directory, ".hidden.txt", "xx")
+		testutil.WriteFile(t, directory, "visible.txt", "hello")
+		testutil.WriteFile(t, directory, ".hidden.txt", "xx")
 
 		return directory
 	}
-}
-
-func nestedTree(topContent, nestedContent string) func(*testing.T) string {
-	return func(t *testing.T) string {
-		t.Helper()
-		directory := t.TempDir()
-		writeTestFile(t, directory, "top.txt", topContent)
-		subDir := makeSubDir(t, directory, "sub")
-		writeTestFile(t, subDir, "nested.txt", nestedContent)
-
-		return directory
-	}
-}
-
-func staticPath(path string) func(*testing.T) string {
-	return func(*testing.T) string { return path }
 }
 
 func skipWithoutSymlinks(t *testing.T) {
@@ -274,26 +252,4 @@ func skipWithoutSymlinks(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("symlinks require special privileges on Windows")
 	}
-}
-
-func writeTestFile(t *testing.T, directory, name, content string) string {
-	t.Helper()
-
-	path := filepath.Join(directory, name)
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	return path
-}
-
-func makeSubDir(t *testing.T, parent, name string) string {
-	t.Helper()
-
-	path := filepath.Join(parent, name)
-	if err := os.MkdirAll(path, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	return path
 }

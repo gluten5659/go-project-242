@@ -3,10 +3,10 @@ package code
 import (
 	"errors"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
+
+	"code/internal/testutil"
 )
 
 func TestGetPathSize(t *testing.T) {
@@ -24,32 +24,32 @@ func TestGetPathSize(t *testing.T) {
 	}{
 		{
 			desc:         "raw bytes for file",
-			setup:        tempFile("a.txt", "hello"),
+			setup:        testutil.TempFile("a.txt", "hello"),
 			formatNeeded: false,
 			want:         "5B",
 		},
 		{
 			desc:         "formatted KB for file",
-			setup:        tempFile("big.dat", strings.Repeat("\x00", 1024*3/2)),
+			setup:        testutil.TempFile("big.dat", strings.Repeat("\x00", 1024*3/2)),
 			formatNeeded: true,
 			want:         "1.5KB",
 		},
 		{
 			desc:         "recursive directory total",
-			setup:        nestedTree("hello", "world!"),
+			setup:        testutil.NestedTree("hello", "world!"),
 			recursive:    true,
 			formatNeeded: false,
 			want:         "11B",
 		},
 		{
 			desc:      "nonexistent path returns error",
-			setup:     staticPath("/no/such/path"),
+			setup:     testutil.StaticPath("/no/such/path"),
 			wantErr:   true,
 			wantErrIs: fs.ErrNotExist,
 		},
 		{
 			desc:         "hidden file path is shown despite listHidden being false",
-			setup:        tempFile(".env", "PORT=8080"),
+			setup:        testutil.TempFile(".env", "PORT=8080"),
 			formatNeeded: false,
 			listHidden:   false,
 			want:         "9B",
@@ -74,50 +74,4 @@ func TestGetPathSize(t *testing.T) {
 			}
 		})
 	}
-}
-
-func tempFile(name, content string) func(*testing.T) string {
-	return func(t *testing.T) string {
-		t.Helper()
-
-		return writeTestFile(t, t.TempDir(), name, content)
-	}
-}
-
-func nestedTree(topContent, nestedContent string) func(*testing.T) string {
-	return func(t *testing.T) string {
-		t.Helper()
-		directory := t.TempDir()
-		writeTestFile(t, directory, "top.txt", topContent)
-		subDir := makeSubDir(t, directory, "sub")
-		writeTestFile(t, subDir, "nested.txt", nestedContent)
-
-		return directory
-	}
-}
-
-func staticPath(path string) func(*testing.T) string {
-	return func(*testing.T) string { return path }
-}
-
-func writeTestFile(t *testing.T, directory, name, content string) string {
-	t.Helper()
-
-	path := filepath.Join(directory, name)
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	return path
-}
-
-func makeSubDir(t *testing.T, parent, name string) string {
-	t.Helper()
-
-	path := filepath.Join(parent, name)
-	if err := os.MkdirAll(path, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	return path
 }
