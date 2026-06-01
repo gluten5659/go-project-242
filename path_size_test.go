@@ -13,14 +13,14 @@ func TestGetPathSize(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		desc         string
-		setup        func(t *testing.T) string
-		recursive    bool
-		formatNeeded bool
-		listHidden   bool
-		want         string
-		wantErr      bool
-		wantErrIs    error
+		desc          string
+		setup         func(t *testing.T) string
+		recursive     bool
+		formatNeeded  bool
+		includeHidden bool
+		want          string
+		wantErr       bool
+		wantErrIs     error
 	}{
 		{
 			desc:         "raw bytes for file",
@@ -48,11 +48,11 @@ func TestGetPathSize(t *testing.T) {
 			wantErrIs: fs.ErrNotExist,
 		},
 		{
-			desc:         "hidden file path is shown despite listHidden being false",
-			setup:        testutil.TempFile(".env", "PORT=8080"),
-			formatNeeded: false,
-			listHidden:   false,
-			want:         "9B",
+			desc:          "hidden file path is shown despite includeHidden being false",
+			setup:         testutil.TempFile(".env", "PORT=8080"),
+			formatNeeded:  false,
+			includeHidden: false,
+			want:          "9B",
 		},
 	}
 	for _, tC := range testCases {
@@ -60,7 +60,7 @@ func TestGetPathSize(t *testing.T) {
 			t.Parallel()
 			path := tC.setup(t)
 
-			got, err := GetPathSize(path, tC.recursive, tC.formatNeeded, tC.listHidden)
+			got, err := GetPathSize(path, tC.recursive, tC.formatNeeded, tC.includeHidden)
 			if (err != nil) != tC.wantErr {
 				t.Fatalf("GetPathSize error = %v, wantErr %v", err, tC.wantErr)
 			}

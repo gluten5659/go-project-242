@@ -5,8 +5,8 @@ import (
 	"code/internal/output"
 )
 
-func GetPathSize(path string, recursive bool, formatNeeded bool, listHidden bool) (string, error) {
-	size, err := dirsize.Measure(path, listHidden, recursive)
+func GetPathSize(path string, recursive bool, formatNeeded bool, includeHidden bool) (string, error) {
+	size, err := dirsize.Measure(path, includeHidden, recursive)
 	if err != nil {
 		return "", err
 	}
