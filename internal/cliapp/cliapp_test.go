@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -231,6 +232,55 @@ func TestCommandReportsFailingChildPathNotRoot(t *testing.T) {
 	}
 }
 
+func TestCommandReportsWriteFailure(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		desc        string
+		writeError  error
+		wantCode    int
+		wantMessage string
+	}{
+		{
+			desc:        "full output stream",
+			writeError:  errors.New("no space left on device"),
+			wantCode:    exitIOErr,
+			wantMessage: "write output: no space left on device",
+		},
+		{
+			desc:        "closed pipe",
+			writeError:  errors.New("broken pipe"),
+			wantCode:    exitIOErr,
+			wantMessage: "write output: broken pipe",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			t.Parallel()
+
+			path := testutil.TempFile("a.txt", "hello")(t)
+
+			err := runCommand(t, failingWriter{err: tC.writeError}, path)
+
+			if got := exitCodeOf(t, err); got != tC.wantCode {
+				t.Errorf("exit code = %d, want %d", got, tC.wantCode)
+			}
+
+			if err.Error() != tC.wantMessage {
+				t.Errorf("message = %q, want %q", err.Error(), tC.wantMessage)
+			}
+		})
+	}
+}
+
+type failingWriter struct {
+	err error
+}
+
+func (writer failingWriter) Write([]byte) (int, error) {
+	return 0, writer.err
+}
+
 func TestUserError(t *testing.T) {
 	t.Parallel()
 
@@ -284,16 +334,22 @@ func TestUserError(t *testing.T) {
 func runCLI(t *testing.T, args ...string) (string, error) {
 	t.Helper()
 
-	var stdout, stderr bytes.Buffer
+	var stdout bytes.Buffer
 
-	cmd := NewCommand()
-	cmd.Writer = &stdout
-	cmd.ErrWriter = &stderr
-	cmd.ExitErrHandler = func(_ context.Context, _ *cli.Command, _ error) {}
-
-	err := cmd.Run(context.Background(), append([]string{"hexlet-path-size"}, args...))
+	err := runCommand(t, &stdout, args...)
 
 	return strings.TrimRight(stdout.String(), "\n"), err
+}
+
+func runCommand(t *testing.T, stdout io.Writer, args ...string) error {
+	t.Helper()
+
+	cmd := NewCommand()
+	cmd.Writer = stdout
+	cmd.ErrWriter = &bytes.Buffer{}
+	cmd.ExitErrHandler = func(_ context.Context, _ *cli.Command, _ error) {}
+
+	return cmd.Run(context.Background(), append([]string{"hexlet-path-size"}, args...))
 }
 
 func exitCodeOf(t *testing.T, err error) int {

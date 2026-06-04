@@ -20,6 +20,7 @@ const (
 	exitUsage      = 64
 	exitDataErr    = 65
 	exitNoInput    = 66
+	exitIOErr      = 74
 	exitPermission = 77
 )
 
@@ -69,7 +70,9 @@ func NewCommand() *cli.Command {
 				return userError(err)
 			}
 
-			_, _ = fmt.Fprintln(cmd.Root().Writer, output.FormatLine(size, path))
+			if _, err := fmt.Fprintln(cmd.Root().Writer, output.FormatLine(size, path)); err != nil {
+				return cli.Exit(fmt.Errorf("write output: %w", err), exitIOErr)
+			}
 
 			return nil
 		},
