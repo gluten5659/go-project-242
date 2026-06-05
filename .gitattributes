@@ -4,3 +4,4 @@ testdata/**     text eol=lf
 go.mod          text eol=lf
 go.sum          text eol=lf
 Makefile        text eol=lf
+demo/demo.gif   binary linguist-generated=true

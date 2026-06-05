@@ -2,6 +2,8 @@
 
 [![Actions Status](https://github.com/gluten5659/go-project-242/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/gluten5659/go-project-242/actions)
 
+![demo](demo/demo.gif)
+
 ## Description
 
 CLI tool that calculates file and directory sizes.
