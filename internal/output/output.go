@@ -16,7 +16,7 @@ var unitSuffixes = []string{
 
 func FormatSize(byteCount int64, formatNeeded bool) string {
 	if !formatNeeded || byteCount < unitBase {
-		return fmt.Sprintf("%dB", byteCount)
+		return fmt.Sprintf("%d%s", byteCount, unitSuffixes[0])
 	}
 
 	value, suffix := scaleToUnit(byteCount)
