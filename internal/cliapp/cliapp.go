@@ -70,7 +70,8 @@ func NewCommand() *cli.Command {
 				return userError(err)
 			}
 
-			if _, err := fmt.Fprintln(cmd.Root().Writer, output.FormatLine(size, path)); err != nil {
+			line := output.FormatLine(size, path)
+			if _, err := fmt.Fprintln(cmd.Root().Writer, line); err != nil {
 				return cli.Exit(fmt.Errorf("write output: %w", err), exitIOErr)
 			}
 
