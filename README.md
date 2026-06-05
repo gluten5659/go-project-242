@@ -76,6 +76,7 @@ The tool returns distinct exit codes so it can be used from scripts:
 | 64   | usage error (wrong number of arguments, bad flag)|
 | 65   | unsupported file type (sockets, pipes, devices)  |
 | 66   | path does not exist                              |
+| 74   | I/O error while writing output                   |
 | 77   | permission denied                                |
 
 ## Development
